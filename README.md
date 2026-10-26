@@ -1,84 +1,84 @@
-# HE THONG NHUNG (EMBEDDED SYSTEMS) - ZEPHYR RTOS APPLICATIONS
+# HỆ THỐNG NHÚNG (EMBEDDED SYSTEMS) - ZEPHYR RTOS APPLICATIONS
 
-Khoa Khoa hoc va Ky thuat May tinh - Truong Dai hoc Bach Khoa, DHQG-HCM  
-Mon hoc: He thong nhung (CO3037 / CO3038)  
-Nen tang phan cung: Kit BKIT ARM4 (STM32F407ZGT6, ARM Cortex-M4 @ 168 MHz)  
-He dieu hanh thoi gian thuc: Zephyr RTOS v4.4.0  
-
----
-
-## 1. Tong quan du an
-
-Repository nay chua toan bo ma nguon, cau hinh Devicetree, Kconfig va tai lieu huong dan thuc hanh mon hoc He thong nhung. Du an duoc thiet ke dua tren he dieu hanh thoi gian thuc ma nguon mo cong nghiep Zephyr RTOS, tap trung vao cac ky nang:
-- Lap trinh he thong da luong (Multithreading) va lap lich thoi gian thuc (Real-time Scheduling).
-- Dong bo tien trinh va truyen thong lien tien trinh (Synchronization & IPC: Semaphores, Mutex, Message Queue).
-- Mang truyen thong vi dieu khien cong nghiep Controller Area Network (CAN Bus) va he thong phan tan.
-- Tich hop he thong nhung phuc tap trong do an cuoi ky (Capstone Assignment).
+Khoa Khoa học và Kỹ thuật Máy tính - Trường Đại học Bách Khoa, ĐHQG-HCM  
+Môn học: Hệ thống nhúng (CO3037 / CO3038)  
+Nền tảng phần cứng: Kit BKIT ARM4 (STM32F407ZGT6, ARM Cortex-M4 @ 168 MHz)  
+Hệ điều hành thời gian thực: Zephyr RTOS v4.4.0  
 
 ---
 
-## 2. Cau truc cac nhanh (Git Branching Strategy)
+## 1. Tổng quan dự án
 
-He thong ma nguon duoc to chuc thanh cac nhanh doc lap phuc vu cho tung giai doan dao tao va nghien cuu:
+Repository này chứa toàn bộ mã nguồn, cấu hình Devicetree, Kconfig và tài liệu hướng dẫn thực hành môn học Hệ thống nhúng. Dự án được thiết kế dựa trên hệ điều hành thời gian thực mã nguồn mở chuẩn công nghiệp Zephyr RTOS, tập trung vào các kỹ năng kỹ thuật cốt lõi:
+- Lập trình hệ thống đa luồng (Multithreading) và lập lịch thời gian thực (Real-time Scheduling).
+- Đồng bộ tiến trình và truyền thông liên tiến trình (Synchronization & IPC: Semaphores, Mutex, Message Queue).
+- Mạng truyền thông vi điều khiển công nghiệp Controller Area Network (CAN Bus 2.0A/B) và hệ thống phân tán.
+- Tích hợp hệ thống nhúng thời gian thực hoàn chỉnh trong Đồ án cuối kỳ (Capstone Assignment).
 
-| Ten nhanh | Noi dung chuyen biet | Trinh do / Muc tieu |
+---
+
+## 2. Cấu trúc các nhánh (Git Branching Strategy)
+
+Hệ thống mã nguồn được tổ chức thành các nhánh độc lập phục vụ cho từng giai đoạn đào tạo và nghiên cứu:
+
+| Tên nhánh | Nội dung chuyên biệt | Mục tiêu đào tạo |
 | :--- | :--- | :--- |
-| `main` | Nhanh tong hop chua toan bo ma nguon, tai lieu va ma tran lab cua khoa hoc. | Tham chieu chung toan khoa |
-| `lab1_multithreading` | Co ban ve Zephyr RTOS, quan ly da luong, dinh thoi, uu tien thuc thi. | Nen tang RTOS & Da nhiem |
-| `lab2_synchronization` | Dong bo tien trinh, Semaphore, Mutex ngan ngua race condition, Message Queue, Deferred ISR. | Dong bo & Truyen thong IPC |
-| `lab3_canbus` | Giao thuc CAN 2.0A/B, bo loc phan cung (Hardware Filters), khung RTR, mang 2 node phan tan. | Mang nhung & He phan tan |
-| `assignment` | Khung kien truc do an cuoi ky tich hop da luong, IPC, CAN Bus va ngoai vi. | Do an tong hop (Capstone) |
+| `main` | Nhánh tổng hợp chứa toàn bộ tài liệu tổng quan, ma trận bài học và đặc tả phần cứng. | Tham chiếu chung toàn khóa |
+| `lab1_multithreading` | Cơ bản về Zephyr RTOS, quản lý đa luồng, định thời, mức độ ưu tiên thực thi. | Nền tảng RTOS & Đa nhiệm |
+| `lab2_synchronization` | Đồng bộ tiến trình, Semaphore, Mutex chống xung đột tài nguyên, Message Queue, Deferred ISR. | Đồng bộ & Truyền thông IPC |
+| `lab3_canbus` | Giao thức CAN 2.0A/B, bộ lọc phần cứng (Hardware Filters), khung RTR, mạng 2 node phân tán. | Mạng nhúng & Hệ phân tán |
+| `assignment` | Khung kiến trúc đồ án cuối kỳ tích hợp đa luồng, IPC, mạng CAN Bus và ngoại vi. | Đồ án tổng hợp (Capstone) |
 
 ---
 
-## 3. Dac ta phan cung Kit BKIT ARM4
+## 3. Đặc tả phần cứng Kit BKIT ARM4
 
-He thong su dung board phat trien BKIT ARM4 duoc thiet ke boi DH Bach Khoa TP.HCM cho muc dich dao tao ky su nhung:
+Hệ thống sử dụng board phát triển BKIT ARM4 được thiết kế bởi ĐH Bách Khoa TP.HCM cho mục đích đào tạo kỹ sư nhúng:
 
-### 3.1. Thong so ky thuat vi dieu khien
-- Vi dieu khien: STM32F407ZGT6 (STMicroelectronics).
-- Loi xu ly: ARM 32-bit Cortex-M4 voi FPU (Floating Point Unit) va tap lenh DSP.
-- Tan so hoat dong: 168 MHz (HSE 8 MHz thach anh ngoai).
-- Bo nho Flash: 1024 KB (1 MB).
-- Bo nho SRAM: 192 KB (128 KB SRAM1/SRAM2 + 64 KB CCM SRAM).
+### 3.1. Thông số kỹ thuật vi điều khiển
+- Vi điều khiển: STM32F407ZGT6 (STMicroelectronics).
+- Lõi xử lý: ARM 32-bit Cortex-M4 với FPU (Floating Point Unit) và tập lệnh DSP.
+- Tần số hoạt động: 168 MHz (sử dụng thạch anh ngoài HSE 8 MHz).
+- Bộ nhớ Flash: 1024 KB (1 MB).
+- Bộ nhớ SRAM: 192 KB (128 KB SRAM1/SRAM2 + 64 KB CCM SRAM).
 
-### 3.2. So do phan bo chan ngoai vi (Pinout Mapping)
-Cac chan ngoai vi tren kit duoc cau hinh dong nhat thong qua file `app.overlay` trong cac du an:
+### 3.2. Bảng phân bố chân ngoại vi (Pinout Mapping)
+Các chân ngoại vi trên kit được định nghĩa đồng nhất thông qua file Devicetree overlay (`app.overlay`):
 
-| Chuc nang | Ten tren Board | Chan GPIO STM32F407 | Che do / Muc logic |
+| Chức năng | Tên trên Board | Chân GPIO STM32F407 | Chế độ / Mức logic |
 | :--- | :--- | :--- | :--- |
-| LED He thong | LED DEBUG (LED3) | `PE4` | Output, Active High (`led0`) |
-| Ngo ra dieu khien 0 | Output Y0 | `PE5` | Output, Active High (`led1`) |
-| Ngo ra dieu khien 1 | Output Y1 | `PE6` | Output, Active High (`led2`) |
-| Role cong suat | RELAY IN1 | `PE2` | Output, Active High |
-| Nut nhan ngoai | KEY / BTN | `PB12` | Input, Active Low (Pull-up) |
+| LED Hệ thống | LED DEBUG (LED3) | `PE4` | Output, Active High (`led0`) |
+| Ngõ ra điều khiển 0 | Output Y0 | `PE5` | Output, Active High (`led1`) |
+| Ngõ ra điều khiển 1 | Output Y1 | `PE6` | Output, Active High (`led2`) |
+| Rơ-le công suất | RELAY IN1 | `PE2` | Output, Active High |
+| Nút nhấn ngoại vi | KEY / BTN | `PB12` | Input, Active Low (Pull-up) |
 | CAN1 Receive | CAN1_RX | `PB8` | Alternate Function 9 (AF9) |
 | CAN1 Transmit | CAN1_TX | `PB9` | Alternate Function 9 (AF9) |
-| Console Debug | USART1_TX / RX | `PA9` / `PA10` | 115200 bps, 8-N-1 (qua MAX232 DB9) |
+| Console Debug | USART1_TX / RX | `PA9` / `PA10` | 115200 bps, 8-N-1 (qua cổng MAX232 DB9) |
 
 ---
 
-## 4. Yeu cau moi truong va Cai dat
+## 4. Yêu cầu môi trường và Cài đặt
 
-### 4.1. Cong cu can thiet
-- He dieu hanh: Ubuntu Linux 22.04 LTS / 24.04 LTS hoac Windows 10/11 (WSL2 / PowerShell).
-- Trinh quan ly du an Zephyr: `west` (phien ban 1.2.0 tro len).
-- Bo cong cu bien dich: Zephyr SDK (v0.16.x tro len) bao gom trinh bien dich `arm-zephyr-eabi-gcc`.
-- Trinh nap chuong trinh: OpenOCD / ST-Link CLI.
-- Phan mem giam sat UART: PuTTY, Tera Term, hoac Serial Monitor trong VS Code (Baudrate: 115200).
+### 4.1. Công cụ cần thiết
+- Hệ điều hành: Ubuntu Linux 22.04 LTS / 24.04 LTS hoặc Windows 10/11 (WSL2 / PowerShell).
+- Trình quản lý dự án Zephyr: `west` (phiên bản 1.2.0 trở lên).
+- Bộ công cụ biên dịch: Zephyr SDK (v0.16.x trở lên) bao gồm trình biên dịch `arm-zephyr-eabi-gcc`.
+- Trình nạp chương trình: OpenOCD / ST-Link CLI.
+- Phần mềm giám sát UART: PuTTY, Tera Term, hoặc Serial Monitor trong VS Code (Baudrate: 115200).
 
-### 4.2. Khoi tao workspace Zephyr
-Neu chua co san workspace Zephyr tren may, thuc hien theo quy trinh chuan:
+### 4.2. Khởi tạo workspace Zephyr
+Nếu chưa có sẵn workspace Zephyr trên máy tính, thực hiện theo quy trình chuẩn:
 
 ```bash
-# Tao moi truong ao Python
+# Tạo môi trường ảo Python
 python3 -m venv ~/zephyrproject/.venv
-source ~/zephyrproject/.venv/bin/activate    # Tren Windows: .venv\Scripts\activate
+source ~/zephyrproject/.venv/bin/activate    # Trên Windows: .venv\Scripts\activate
 
-# Cai dat west
+# Cài đặt công cụ west
 pip install west
 
-# Khoi tao ma nguon Zephyr v4.4.0
+# Khởi tạo mã nguồn Zephyr v4.4.0
 west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.0 ~/zephyrproject
 cd ~/zephyrproject
 west update
@@ -88,53 +88,53 @@ pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
 ---
 
-## 5. Huong dan su dung Repository
+## 5. Hướng dẫn sử dụng Repository
 
-### 5.1. Clone ma nguon
+### 5.1. Clone mã nguồn
 ```bash
 git clone https://github.com/vophamk23/EMBEDDED-SYSTEMS.git
 cd EMBEDDED-SYSTEMS
 ```
 
-### 5.2. Chuyen doi qua lai giua cac nhanh
-De lam viec voi tung bai thuc hanh, chuyen nhanh tuong ung bang Git:
+### 5.2. Chuyển đổi qua lại giữa các nhánh
+Để làm việc với từng bài thực hành, chuyển nhánh tương ứng bằng Git:
 
 ```bash
-# Xem danh sach cac nhanh tren remote
+# Xem danh sách các nhánh trên máy chủ remote
 git branch -a
 
-# Chuyen sang Lab 1: Da luong
+# Chuyển sang Lab 1: Đa luồng
 git checkout lab1_multithreading
 
-# Chuyen sang Lab 2: Dong bo va IPC
+# Chuyển sang Lab 2: Đồng bộ và IPC
 git checkout lab2_synchronization
 
-# Chuyen sang Lab 3: Mang CAN Bus
+# Chuyển sang Lab 3: Mạng CAN Bus
 git checkout lab3_canbus
 
-# Chuyen sang Assignment: Do an cuoi ky
+# Chuyển sang Assignment: Đồ án cuối kỳ
 git checkout assignment
 ```
 
-### 5.3. Quy trinh bien dich va nap chuong trinh (Build & Flash)
-Moi thu muc bai tap (vi du: `lab1_ex1_asym_blinky`) la mot ung dung Zephyr doc lap. Thuc hien lenh sau tu thu muc goc cua nhanh:
+### 5.3. Quy trình biên dịch và nạp chương trình (Build & Flash)
+Mỗi thư mục bài tập (ví dụ: `lab1_ex1_asym_blinky`) là một ứng dụng Zephyr độc lập. Thực hiện lệnh sau từ thư mục gốc của nhánh:
 
 ```bash
-# Bien dich ung dung (su dung board stm32f4_disco duoc overlay boi app.overlay)
+# Biên dịch ứng dụng (sử dụng board stm32f4_disco được overlay bởi app.overlay)
 west build -p always -b stm32f4_disco path/to/project_dir
 
-# Nap code vao vi dieu khien qua ST-Link
+# Nạp firmware vào vi điều khiển qua ST-Link
 west flash
 
-# Xoa bo nho cache va bien dich lai tu dau
+# Xóa bộ nhớ đệm và biên dịch lại hoàn toàn từ đầu
 west build -p pristine -b stm32f4_disco path/to/project_dir
 ```
 
 ---
 
-## 6. Danh muc tai lieu tham khao
+## 6. Danh mục tài liệu tham khảo
 
-1. Zephyr Project Documentation (v4.4.0): https://docs.zephyrproject.org/latest/
+1. Tài liệu chính thức Zephyr RTOS (v4.4.0): https://docs.zephyrproject.org/latest/
 2. STM32F407ZGT6 Reference Manual (RM0090): STMicroelectronics.
 3. Cortex-M4 Generic User Guide: ARM Holdings.
-4. Giao trinh Thuc hanh He thong nhung - Khoa KH&KT May tinh, DH Bach Khoa TP.HCM.
+4. Giáo trình Thực hành Hệ thống nhúng - Khoa KH&KT Máy tính, ĐH Bách Khoa TP.HCM.
