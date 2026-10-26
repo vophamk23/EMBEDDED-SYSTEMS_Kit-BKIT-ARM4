@@ -1,30 +1,30 @@
-# LAB 1: MULTITHREADING AND REAL-TIME SCHEDULING IN ZEPHYR RTOS
+# LAB 1: ĐA LUỒNG VÀ LẬP LỊCH THỜI GIAN THỰC TRONG ZEPHYR RTOS
 
-Khoa Khoa hoc va Ky thuat May tinh - Truong Dai hoc Bach Khoa, DHQG-HCM  
-Mon hoc: He thong nhung (CO3037 / CO3038)  
-Nhanh Git: `lab1_multithreading`  
-Nen tang: Kit BKIT ARM4 (STM32F407ZGT6, ARM Cortex-M4 @ 168 MHz)  
-He dieu hanh: Zephyr RTOS v4.4.0  
-
----
-
-## 1. Muc tieu thi nghiem
-
-1. Nam vung kien truc da luong (Multithreading) va bo lap lich thoi gian thuc cua Zephyr RTOS.
-2. Phan biet co che khai bao luong tinh (`K_THREAD_DEFINE`) va khai bao luong dong (`k_thread_create`).
-3. Hieu ro phan cap do uu tien:
-   - Cooperative threads: Do uu tien am (tu -15 den -1), khong the bi chiem quyen (non-preemptible) tru khi chu dong goi `k_yield()` hoac sleep.
-   - Preemptive threads: Do uu tien khong am (tu 0 den 14), co the bi luong co do uu tien cao hon ngat va chiem CPU bat ky luc nao.
-4. Thiet lap bo nho ngan xep (Stack allocation) va bao ve chong tran stack (`CONFIG_STACK_SENTINEL` / `CONFIG_HW_STACK_PROTECTION`).
-5. Ap dung ky thuat truyen tham so cau hinh cho luong (`struct blink_cfg`) va dieu khien may trang thai huu han (FSM) ket hop da luong doc lap.
+Khoa Khoa học và Kỹ thuật Máy tính - Trường Đại học Bách Khoa, ĐHQG-HCM  
+Môn học: Hệ thống nhúng (CO3037 / CO3038)  
+Nhánh Git: `lab1_multithreading`  
+Nền tảng: Kit BKIT ARM4 (STM32F407ZGT6, ARM Cortex-M4 @ 168 MHz)  
+Hệ điều hành: Zephyr RTOS v4.4.0  
 
 ---
 
-## 2. Phan bo chan phan cung (Pinout Configuration)
+## 1. Mục tiêu thí nghiệm
 
-He thong su dung file Devicetree overlay (`app.overlay`) de dinh nghia lai cac chan ngoai vi tren kit BKIT ARM4:
+1. Nắm vững kiến trúc đa luồng (Multithreading) và bộ lập lịch thời gian thực của Zephyr RTOS.
+2. Phân biệt cơ chế khai báo luồng tĩnh (`K_THREAD_DEFINE`) và khai báo luồng động (`k_thread_create`).
+3. Hiểu rõ cơ chế phân cấp độ ưu tiên:
+   - **Cooperative threads:** Độ ưu tiên mang giá trị âm (từ -15 đến -1), không thể bị chiếm quyền (non-preemptible) trừ khi chủ động nhường CPU bằng `k_yield()` hoặc chuyển sang trạng thái ngủ (`k_msleep()`).
+   - **Preemptive threads:** Độ ưu tiên mang giá trị không âm (từ 0 đến 14), có thể bị luồng có độ ưu tiên cao hơn ngắt và chiếm quyền thực thi tại bất kỳ thời điểm nào.
+4. Thiết lập bộ nhớ ngăn xếp (Stack allocation) và cấu hình bảo vệ chống tràn stack (`CONFIG_STACK_SENTINEL` / `CONFIG_HW_STACK_PROTECTION`).
+5. Áp dụng kỹ thuật truyền tham số cấu hình cho luồng (`struct blink_cfg`) và điều khiển máy trạng thái hữu hạn (FSM) kết hợp đa luồng độc lập.
 
-| Ngoai vi / Tin hieu | Chan GPIO STM32F407 | Alias Devicetree | Che do hoat dong |
+---
+
+## 2. Phân bố chân phần cứng (Pinout Configuration)
+
+Hệ thống sử dụng file Devicetree overlay (`app.overlay`) để cấu hình ngoại vi trên kit BKIT ARM4:
+
+| Ngoại vi / Tín hiệu | Chân GPIO STM32F407 | Alias Devicetree | Chế độ hoạt động |
 | :--- | :--- | :--- | :--- |
 | LED3 (DEBUG LED) | `PE4` | `led0` | GPIO Output, Active-High |
 | Output Y0 | `PE5` | `led1` | GPIO Output, Active-High |
@@ -33,58 +33,58 @@ He thong su dung file Devicetree overlay (`app.overlay`) de dinh nghia lai cac c
 
 ---
 
-## 3. Danh muc cac bai thuc hanh va Mo ta chi tiet
+## 3. Danh mục các bài thực hành và Mô tả chi tiết
 
-### 3.1. Cac bai Demo nen tang (`demos/`)
+### 3.1. Các bài Demo nền tảng (`demos/`)
 
 - `lab1_demo1_single_thread`:
-  - Kiem tra luong mac dinh `main`.
-  - Su dung `k_msleep()` de dinh thoi va in thong diep debug ra cong UART.
+  - Khảo sát luồng mặc định `main`.
+  - Sử dụng `k_msleep()` để định thời và in thông điệp gỡ lỗi ra cổng UART.
 - `lab1_demo2_multi_thread`:
-  - Khoi tao 2 luong cung chay song song voi cung mot muc do uu tien.
-  - Quan sat hanh vi chia se thoi gian CPU thong qua Time-slicing va goi chu dong `k_yield()`.
+  - Khởi tạo 2 luồng cùng chạy song song với cùng một mức độ ưu tiên.
+  - Quan sát hành vi chia sẻ thời gian CPU thông qua Time-slicing và gọi chủ động `k_yield()`.
 - `lab1_demo3_priority`:
-  - Khoi tao cac luong voi cac muc do uu tien khac nhau.
-  - Chung minh nguyen tac: Luong co gia tri priority nho hon (uu tien cao hon) se luon chiem CPU truoc.
+  - Khởi tạo các luồng với các mức độ ưu tiên khác nhau.
+  - Chứng minh nguyên tắc: Luồng có giá trị priority nhỏ hơn (ưu tiên cao hơn) sẽ luôn được cấp CPU trước.
 - `lab1_demo4_preemption`:
-  - Kiem chung co che chiem quyen (Preemptive Scheduling).
-  - Khi luong uu tien cao tinh giac (wake up), bo lap lich lap tuc tam ngung luong uu tien thap de phuc vu luong uu tien cao.
+  - Kiểm chứng cơ chế chiếm quyền (Preemptive Scheduling).
+  - Khi luồng ưu tiên cao thức giấc (wake up), bộ lập lịch lập tức tạm dừng luồng ưu tiên thấp để phục vụ luồng ưu tiên cao.
 
 ---
 
-### 3.2. Cac bai tap ung dung (`lab1_ex*`)
+### 3.2. Các bài tập ứng dụng (`lab1_ex*`)
 
-#### Bai 0: `bkit_blinky` - Kiem tra phan cung kit
-- **Yeu cau:** Kiem tra ket noi GPIO port E va LED3 tren board.
-- **Thuc thi:** Nhay LED3 chu ky doi xung: Sang 1000 ms, Tat 1000 ms.
-- **Kiem chung:** LED3 tren kit nhap nhay deu dan voi chu ky 2 giay.
+#### Bài 0: `bkit_blinky` - Kiểm tra phần cứng kit
+- **Yêu cầu:** Kiểm tra hoạt động cơ bản của GPIO port E và LED3 trên bo mạch.
+- **Thực thi:** Nháy LED3 với chu kỳ đối xứng: Sáng 1000 ms, Tắt 1000 ms.
+- **Kiểm chứng:** LED3 trên kit nhấp nháy đều đặn với chu kỳ 2 giây.
 
-#### Bai 1: `lab1_ex1_asym_blinky` - Nhay LED bat doi xung
-- **Yeu cau:** Tao mot luong doc lap `thread_led_blinky` bang macro `K_THREAD_DEFINE`.
-- **Thong so:**
-  - Stack size: 1024 bytes.
-  - Priority: 7 (Preemptive).
-  - Chu ky: Sang 1000 ms (1 giay), Tat 2000 ms (2 giay). Tong chu ky 3 giay.
-- **Muc dich:** Lam quen voi viec tach logic dieu khien khoi ham `main()` vao mot luong chuyen biet.
+#### Bài 1: `lab1_ex1_asym_blinky` - Nháy LED bất đối xứng
+- **Yêu cầu:** Tạo một luồng độc lập `thread_led_blinky` bằng macro `K_THREAD_DEFINE`.
+- **Thông số kỹ thuật:**
+  - Kích thước ngăn xếp (Stack size): 1024 bytes.
+  - Độ ưu tiên (Priority): 7 (Preemptive).
+  - Chu kỳ nháy: Sáng 1000 ms (1 giây), Tắt 2000 ms (2 giây). Tổng chu kỳ là 3 giây.
+- **Mục đích:** Tách biệt logic điều khiển thời gian thực ra khỏi hàm `main()` vào một luồng chuyên biệt.
 
-#### Bai 2: `lab1_ex2_sync_led_y0` - Dong bo qua bien toan cuc
-- **Yeu cau:** Phoi hop hoat dong giua 2 luong thong qua bien toan cuc `volatile bool g_led_state`.
-- **Thiet ke:**
-  - Luong Master (`thread_led_blinky`): Dieu khien LED3 nhay chu ky Sang 2000 ms / Tat 2000 ms; dong thoi cap nhat trang thai logic vao `g_led_state`.
-  - Luong Slave (`thread_y0_sync`): Chu ky polling 10 ms doc gia tri `g_led_state` va xuat logic tuong ung ra Output Y0 (`PE5`).
-- **Luu y ky thuat:** Tu khoa `volatile` bat buoc phai co de trinh bien dich khong toi uu hoa bien ra thanh ghi, dam bao luong Slave luon doc truc tiep tu bo nho RAM.
+#### Bài 2: `lab1_ex2_sync_led_y0` - Đồng bộ qua biến dùng chung
+- **Yêu cầu:** Phối hợp hoạt động giữa 2 luồng thông qua biến toàn cục `volatile bool g_led_state`.
+- **Thiết kế:**
+  - Luồng Chủ (`thread_led_blinky`): Điều khiển LED3 nháy chu kỳ Sáng 2000 ms / Tắt 2000 ms; đồng thời cập nhật trạng thái logic vào biến `g_led_state`.
+  - Luồng Phụ (`thread_y0_sync`): Chu kỳ lấy mẫu 10 ms đọc biến `g_led_state` và xuất mức logic tương ứng ra Output Y0 (`PE5`).
+- **Lưu ý kỹ thuật:** Từ khóa `volatile` bắt buộc phải có để trình biên dịch không tối ưu hóa biến vào thanh ghi, đảm bảo luồng Phụ luôn đọc trực tiếp từ bộ nhớ RAM.
 
-#### Bai 3: `lab1_ex3_independent_patterns` - Mau nhay doc lap da luong
-- **Yeu cau:** Xay dung 2 luong chay hoan toan doc lap voi chu ky va pha khong dong bo:
-  - Luong 1 (`thread_led_blinky`): LED3 nhay Sang 1500 ms, Tat 500 ms (chu ky 2000 ms).
-  - Luong 2 (`thread_y0_y1_pattern`): Dieu khien 2 ngo ra Y0 va Y1 lap tuan tu theo chu ky 5000 ms qua 3 pha:
+#### Bài 3: `lab1_ex3_independent_patterns` - Mẫu nháy độc lập đa luồng
+- **Yêu cầu:** Xây dựng 2 luồng chạy hoàn toàn độc lập với chu kỳ và pha không đồng bộ:
+  - Luồng 1 (`thread_led_blinky`): LED3 nháy Sáng 1500 ms, Tắt 500 ms (chu kỳ 2000 ms).
+  - Luồng 2 (`thread_y0_y1_pattern`): Điều khiển 2 ngõ ra Y0 và Y1 tuần tự theo chu kỳ 5000 ms qua 3 pha:
     - Pha 1 (2000 ms): Y0 = 1, Y1 = 0.
     - Pha 2 (1500 ms): Y0 = 0, Y1 = 1.
     - Pha 3 (1500 ms): Y0 = 1, Y1 = 1.
-- **Kiem chung:** Quan sat tren Logic Analyzer hoac he thong den LED ngoai de thay su doc lap tuyet doi giua 2 bo dinh thoi.
+- **Kiểm chứng:** Sử dụng Logic Analyzer hoặc hệ thống đèn ngoại vi để kiểm tra tính độc lập tuyệt đối giữa 2 bộ định thời.
 
-#### Bai 4: `lab1_ex4_multi_led_param` - Tai su dung ham Thread bang tham so
-- **Yeu cau:** Khong viet lap lai ma nguon cho tung luong; su dung mot ham duy nhat `thread_blink_entry` de dieu khien dong thoi 3 den thong qua con tro cau truc:
+#### Bài 4: `lab1_ex4_multi_led_param` - Tái sử dụng hàm Thread bằng tham số
+- **Yêu cầu:** Không lặp lại mã nguồn; sử dụng một hàm thực thi duy nhất `thread_blink_entry` để điều khiển đồng thời 3 đèn thông qua con trỏ cấu trúc:
   ```c
   struct blink_cfg {
       struct gpio_dt_spec led;
@@ -93,42 +93,42 @@ He thong su dung file Devicetree overlay (`app.overlay`) de dinh nghia lai cac c
       const char *name;
   };
   ```
-- **Thong so cau hinh:**
-  - LED3 (`PE4`): Sang 500 ms, Tat 500 ms.
-  - Output Y0 (`PE5`): Sang 1000 ms, Tat 1000 ms.
-  - Output Y1 (`PE6`): Sang 1500 ms, Tat 1500 ms.
-- **Ky thuat:** Khoi tao luong bang `K_THREAD_DEFINE` va truyen dia chi con tro `&cfg_led3`, `&cfg_y0`, `&cfg_y1` qua tham so `p1`.
+- **Thông số cấu hình:**
+  - LED3 (`PE4`): Sáng 500 ms, Tắt 500 ms.
+  - Output Y0 (`PE5`): Sáng 1000 ms, Tắt 1000 ms.
+  - Output Y1 (`PE6`): Sáng 1500 ms, Tắt 1500 ms.
+- **Kỹ thuật:** Khởi tạo luồng bằng `K_THREAD_DEFINE` và truyền địa chỉ con trỏ `&cfg_led3`, `&cfg_y0`, `&cfg_y1` qua tham số `p1`.
 
-#### Bai 5: `lab1_ex5_traffic_light` - He thong den giao thong da luong
-- **Yeu cau:** Mo phong he thong den giao thong ket hop he thong giam sat song con (Heartbeat):
-  - Luong 1 (Heartbeat): Dieu khien LED3 nhay deu dan 1000 ms ON / 1000 ms OFF nham bao hieu MCU van dang hoat dong binh thuong.
-  - Luong 2 (May trang thai FSM giao thong):
-    - Trang thai RED (Do - Den Y0): Sang 7000 ms.
-    - Trang thai GREEN (Xanh - Den Y1): Sang 5000 ms.
-    - Trang thai YELLOW (Vang - Bat ca Y0 va Y1): Sang 2000 ms.
-- **Kiem chung:** FSM hoat dong chinh xac ve thoi gian ma khong lam anh huong den nhip dap cua Heartbeat.
+#### Bài 5: `lab1_ex5_traffic_light` - Hệ thống đèn giao thông đa luồng
+- **Yêu cầu:** Mô phỏng hệ thống đèn giao thông 3 pha tuần tự kết hợp luồng giám sát sống còn (Heartbeat):
+  - Luồng 1 (Heartbeat): Điều khiển LED3 nháy đều đặn 1000 ms ON / 1000 ms OFF nhằm báo hiệu MCU đang vận hành bình thường.
+  - Luồng 2 (Máy trạng thái FSM giao thông):
+    - Trạng thái RED (Đỏ - Đèn Y0): Sáng 7000 ms.
+    - Trạng thái GREEN (Xanh - Đèn Y1): Sáng 5000 ms.
+    - Trạng thái YELLOW (Vàng - Bật cả Y0 và Y1): Sáng 2000 ms.
+- **Kiểm chứng:** Chu kỳ đèn giao thông chuyển pha chính xác theo thời gian thực mà không làm gián đoạn nhịp đập của Heartbeat.
 
 ---
 
-## 4. Huong dan Bien dich va Nap chuong trinh
+## 4. Hướng dẫn Biên dịch và Nạp chương trình
 
-Tu thu muc goc cua nhanh `lab1_multithreading`, thuc hien cac lenh sau:
+Từ thư mục gốc của nhánh `lab1_multithreading`, thực hiện các lệnh sau:
 
 ```bash
-# Vi du bien dich va nap Bai 5: He thong den giao thong
+# Biên dịch và nạp Bài 5: Hệ thống đèn giao thông
 west build -p always -b stm32f4_disco lab1_ex5_traffic_light
 
-# Nap firmware qua ST-Link
+# Nạp firmware qua ST-Link
 west flash
 
-# Mo cong UART de giam sat log (tren Linux)
+# Mở cổng UART để giám sát log (trên Linux)
 picocom -b 115200 /dev/ttyUSB0
 ```
 
 ---
 
-## 5. Quy tac ky thuat va Luu y
+## 5. Quy tắc kỹ thuật và Lưu ý
 
-1. **Stack Size:** Do ham `printk()` va driver GPIO yeu cau ngan xep tuong doi, moi luong can duoc cap phat toi thieu 1024 bytes (`1024`) de tranh loi HardFault / Stack Overflow.
-2. **Priority Range:** Cac luong thong thuong trong bai thuc hanh duoc dat trong khoang tu 5 den 8 (Preemptive). Luong giam sat hoac yeu cau dap ung nhanh dat priority thap hon ve mat gia tri (uu tien cao hon).
-3. **Cooperative vs Preemptive:** Neu dat do uu tien am (vi du: `-1`), luong se chay lien tuc va bo lap lich khong the ngat neu luong khong chu dong nhuong quyen (`k_msleep` hoac `k_yield`).
+1. **Kích thước Stack:** Do hàm `printk()` và driver GPIO yêu cầu ngăn xếp tương đối, mỗi luồng cần được cấp phát tối thiểu 1024 bytes (`1024`) để tránh lỗi HardFault do tràn ngăn xếp.
+2. **Dải độ ưu tiên:** Các luồng thông thường trong bài thực hành được cấu hình trong khoảng từ 5 đến 8 (Preemptive). Luồng có yêu cầu thời gian thực khắt khe hơn cần đặt mức ưu tiên cao hơn (giá trị số nhỏ hơn).
+3. **Cooperative vs Preemptive:** Nếu đặt độ ưu tiên âm (ví dụ: `-1`), luồng sẽ chiếm giữ CPU liên tục và bộ lập lịch không thể ngắt trừ khi luồng chủ động nhường quyền (`k_msleep` hoặc `k_yield`).
