@@ -1,4 +1,4 @@
-# ⚡ HỆ THỐNG NHÚNG (EMBEDDED SYSTEMS) - ZEPHYR RTOS
+# HỆ THỐNG NHÚNG (EMBEDDED SYSTEMS) - ZEPHYR RTOS
 ### Lập trình Đa luồng, Đồng bộ IPC & Mạng CAN Bus trên Kit BKIT ARM4 (STM32F407)
 
 > **Trường Đại học Bách Khoa - ĐHQG-HCM**  
