@@ -1,0 +1,241 @@
+\documentclass[a4paper]{article}
+\ProvidesPackage{bkthesis}
+\usepackage{vntex}
+\usepackage{a4wide,amssymb,epsfig,latexsym,array,hhline,fancyhdr}
+\usepackage[normalem]{ulem}
+\usepackage{setspace}
+\usepackage[makeroom]{cancel}
+\usepackage{amsmath, amsthm, amscd}
+\usepackage{multicol,longtable}
+\usepackage{diagbox}
+\usepackage{booktabs}
+\usepackage{alltt}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{caption,subcaption}
+\usepackage{enumitem}
+\usepackage{lastpage}
+\usepackage[lined,boxed,commentsnumbered]{algorithm2e}
+% \usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{multirow}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,positioning,calc}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+\usepackage[unicode]{hyperref}
+\hypersetup{urlcolor=blue,linkcolor=black,citecolor=black,colorlinks=true}
+
+\definecolor{codebg}{RGB}{248,249,250}
+\definecolor{codeframe}{RGB}{218,224,233}
+\definecolor{keywordcolor}{RGB}{0,51,179}
+\definecolor{commentcolor}{RGB}{43,138,62}
+\definecolor{stringcolor}{RGB}{186,33,33}
+
+\lstset{
+    language=C,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    commentstyle=\color{commentcolor}\itshape,
+    stringstyle=\color{stringcolor},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    tabsize=4,
+    showspaces=false,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=true,
+    escapeinside={(*@}{@*)}
+}
+
+\def\thesislayout{
+	\geometry{
+		a4paper,
+		includehead,
+		includefoot,
+		top=8.0mm,
+		bottom=18.5mm,
+		left=25mm,
+		right=25mm,
+		headheight=36pt,
+		headsep=18pt,
+		footskip=30pt,
+	}
+}
+\thesislayout
+
+\setlength{\headheight}{40pt}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[L]{
+ \begin{tabular}{rl}
+    \begin{picture}(25,15)(0,0)
+    \put(0,-8){\includegraphics[width=8mm, height=8mm]{image/hcmut.png}}
+   \end{picture}&
+	\begin{tabular}{l}
+		\textbf{\bf \ttfamily TRƯỜNG ĐẠI HỌC BÁCH KHOA - ĐHQG TP.HCM (HCMUT)}\\
+		\textbf{\bf \ttfamily KHOA KHOA HỌC \& KỸ THUẬT MÁY TÍNH}
+	\end{tabular} 	
+ \end{tabular}
+}
+\fancyhead[R]{}
+\fancyfoot{}
+\fancyfoot[L]{\scriptsize \ttfamily HỆ THỐNG NHÚNG (EMBEDDED SYSTEMS) \\Năm học 2025 - 2026 }
+\fancyfoot[R]{\scriptsize \ttfamily Trang {\thepage}/\pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{3pt}
+
+\newcommand{\oosplit}{
+\begin{center}
+\begin{tikzpicture}
+    \draw[line width=0.5 pt] (-4,0) -- (-0.3,0);
+    \node at (0,0) {{\Large $\bullet$}};
+    \draw[line width=0.5pt] (0.3,0) -- (4,0);
+\end{tikzpicture}
+\end{center}
+}
+
+\begin{document}
+
+\onehalfspacing
+\begin{titlepage}
+\newgeometry{left=25mm,right=25mm,top=20mm,bottom=20mm}
+
+% --- Toàn bộ trang ---
+\begin{tikzpicture}[remember picture,overlay]
+% --- Khung đôi ---
+% Viền ngoài (dày)
+\draw[line width=0.16 cm] 
+    ([xshift=13mm,yshift=-13mm]current page.north west)
+    rectangle
+    ([xshift=-13mm,yshift=13mm]current page.south east);
+
+% Viền trong (mảnh)
+\draw[line width=0.05 cm] 
+    ([xshift=15mm,yshift=-15mm]current page.north west)
+    rectangle
+    ([xshift=-15mm,yshift=15mm]current page.south east);
+
+\end{tikzpicture}
+\begin{center}
+\vspace{0.10cm}
+{\fontsize{13.5}{16}\selectfont\bfseries
+ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH \\
+TRƯỜNG ĐẠI HỌC BÁCH KHOA \\
+KHOA KHOA HỌC \& KỸ THUẬT MÁY TÍNH }
+\end{center}
+
+\oosplit
+\vspace{0.2cm}
+
+\begin{center}
+\includegraphics[width=5cm]{image/hcmut.png}
+\end{center}
+\vspace{0.1cm}
+
+\begin{center}
+    {\fontsize{18}{24}\selectfont\bfseries HỆ THỐNG NHÚNG (CO3054)\par}
+
+    \rule{\textwidth}{0.8pt}
+
+    {\fontsize{15}{22}\selectfont\bfseries BÁO CÁO BÀI THỰC HÀNH 1\par}
+    \vspace{0.1cm}
+    {\fontsize{18}{24}\selectfont\bfseries 
+    \textcolor{red}{LÀM VIỆC VỚI LED \& CƠ CHẾ ĐA NHIỆM}\par}
+
+    \rule{\textwidth}{0.8pt}
+\end{center}
+
+\vspace{0.1cm}
+
+
+\begin{center}
+    {\fontsize{16}{20}\selectfont\bfseries 
+     Lớp: L02 - Học Kỳ HK261 \\
+     Ngày nộp: 27/10/2026 \par}
+    \vspace{1cm}
+    {\fontsize{15}{20}\selectfont\bfseries
+    GVHD: Thầy Lê Phương Nam}
+\end{center}
+
+% DANH SÁCH NHÓM
+\begin{center}
+{\fontsize{13}{14}\selectfont
+\begin{tabular}{|>{\centering\arraybackslash}p{7cm}|>{\centering\arraybackslash}p{4cm}|}
+\hline
+\textbf{Sinh Viên} & \textbf{MSSV} \\
+\hline
+
+Phạm Công Võ & 2313946 \\
+\hline
+
+\end{tabular}
+}
+\end{center}
+
+
+\vspace{1.8cm}
+\begin{center}
+{\large TP.Hồ Chí Minh, Tháng 10/2026}
+\end{center}
+\end{titlepage}
+\restoregeometry
+\restoregeometry
+
+\newpage
+\begin{center}
+    \textbf{\Large THÔNG TIN THỰC HIỆN VÀ ĐÁNH GIÁ KẾT QUẢ}\\[1ex]
+    \textbf{\large BÀI THỰC HÀNH 1}
+\end{center}
+
+\vspace{1.5em}
+
+\noindent
+\begin{tabularx}{\textwidth}{|c|m{3cm}|c|X|c|c|}
+\hline
+\textbf{STT} & \textbf{\centering Họ và tên} & \textbf{MSSV} & \textbf{\centering Nhiệm vụ} & \textbf{Kết quả} & \textbf{Chữ ký} \\
+\hline
+1 & Phạm Công Võ & 2313946 & \begin{itemize}[leftmargin=*]
+    \item Hiện thực toàn bộ mã nguồn Bài 1 đến Bài 5
+    \item Thực nghiệm trên Kit BKIT ARM4
+    \item Soạn thảo tài liệu báo cáo
+\end{itemize} & 100\% & \\
+\hline
+\end{tabularx}
+
+\newpage
+\tableofcontents
+\newpage
+
+\input{content/exercises}
+
+\newpage
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+\begin{thebibliography}{99}
+\bibitem{zephyr_doc}
+Zephyr Project Documentation. (2024). \textit{Zephyr RTOS v4.4.0 Documentation}. Available at: \url{https://docs.zephyrproject.org/4.4.0/}
+
+\bibitem{bkit_arm4}
+Bộ môn Kỹ thuật Máy tính - ĐH Bách Khoa ĐHQG-HCM. (2024). \textit{Tài liệu hướng dẫn thực hành Kit BKIT ARM4 (STM32F407ZGT6)}.
+
+\bibitem{cortex_m4}
+STMicroelectronics. (2021). \textit{STM32F407xx Reference Manual (RM0090) - Advanced ARM-based 32-bit MCUs}.
+\end{thebibliography}
+
+\end{document}
