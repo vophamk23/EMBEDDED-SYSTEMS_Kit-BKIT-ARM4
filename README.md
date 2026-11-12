@@ -23,6 +23,11 @@
   - [3.7. ACK và Vòng đời xử lý lỗi Bus (Error Confinement & State Machine)](#37-ack-và-vòng-đời-xử-lý-lỗi-bus-error-confinement--state-machine)
   - [3.8. Bộ lọc nhận phần cứng bxCAN (Hardware Acceptance Filter ID & Mask)](#38-bộ-lọc-nhận-phần-cứng-bxcan-hardware-acceptance-filter-id--mask)
   - [3.9. Hệ thống API CAN của Zephyr RTOS](#39-hệ-thống-api-can-của-zephyr-rtos)
+    - [3.9.1. Bảng tra cứu toàn diện API CAN Driver (<zephyr/drivers/can.h>)](#391-bảng-tra-cứu-toàn-diện-api-can-driver-zephyrdriverscanh)
+    - [3.9.2. Bảng các API RTOS phối hợp trong hệ thống mạng CAN](#392-bảng-các-api-rtos-phối-hợp-trong-hệ-thống-mạng-can)
+    - [3.9.3. Bảng Cấu trúc Dữ liệu, Macro & Cờ điều khiển cốt lõi](#393-bảng-cấu-trúc-dữ-liệu-macro--cờ-điều-khiển-cốt-lõi)
+    - [3.9.4. Bảng mã lỗi Driver CAN thường gặp & Giải pháp xử lý](#394-bảng-mã-lỗi-driver-can-thường-gặp--giải-pháp-xử-lý)
+    - [3.9.5. Chu trình khởi tạo 4 bước & Mẫu code chuẩn mực](#395-chu-trình-khởi-tạo-4-bước--mẫu-code-chuẩn-mực-best-practices)
   - [3.10. Đối chiếu cú pháp: Zephyr RTOS vs STM32 HAL (STM32CubeIDE)](#310-đối-chiếu-cú-pháp-zephyr-rtos-vs-stm32-hal-stm32cubeide)
 - [4. Cấu hình Project CAN trong Zephyr (Devicetree & Kconfig)](#4-cấu-hình-project-can-trong-zephyr-devicetree--kconfig)
 - [5. Cấu trúc thư mục dự án](#5-cấu-trúc-thư-mục-dự-án)
@@ -279,24 +284,161 @@ Tương đương: **`(Received_ID & Mask) == (Filter_ID & Mask)`**
 
 ### 3.9. Hệ thống API CAN của Zephyr RTOS
 
-1. **Chu trình khởi tạo bắt buộc:**
-   ```c
-   /* 1. Lấy device */
-   const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+Toàn bộ các hàm giao tiếp CAN trong Zephyr RTOS được định nghĩa trong header file `<zephyr/drivers/can.h>`. Dưới đây là bảng tra cứu đầy đủ các hàm, cấu trúc dữ liệu, cờ điều khiển và mã lỗi được chuẩn hóa theo phân nhóm chức năng.
 
-   /* 2. Cấu hình mode (KHI ĐANG STOPPED) */
-   can_set_mode(can_dev, CAN_MODE_LOOPBACK); // hoặc CAN_MODE_NORMAL
+---
 
-   /* 3. Thêm bộ lọc phần cứng */
-   can_add_rx_filter_msgq(can_dev, &my_msgq, &my_filter);
+#### 3.9.1. Bảng tra cứu toàn diện API CAN Driver (`<zephyr/drivers/can.h>`)
 
-   /* 4. Bắt đầu chạy */
-   can_start(can_dev);
-   ```
+| Nhóm chức năng | Tên Hàm / Macro | Ngữ cảnh gọi | Cú pháp & Tham số chính | Ý nghĩa kỹ thuật & Hành vi | Giá trị trả về / Mã lỗi |
+| :--- | :--- | :---: | :--- | :--- | :--- |
+| **Khởi tạo & Trạng thái** | `DEVICE_DT_GET()` | Init / Thread | `DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))` | Macro lấy con trỏ thiết bị `const struct device *` từ node Devicetree đã chọn. | Con trỏ `struct device` |
+| | `device_is_ready()` | Init / Thread | `device_is_ready(const struct device *dev)` | Kiểm tra phần cứng và driver CAN đã sẵn sàng hoạt động hay chưa. | `true`: sẵn sàng<br/>`false`: chưa sẵn sàng |
+| | `can_set_mode()` | Thread | `can_set_mode(dev, can_mode_t mode)` | Cài đặt chế độ hoạt động (`NORMAL`, `LOOPBACK`, `LISTENONLY`, ...). **Bắt buộc gọi khi controller ở trạng thái STOPPED.** | `0`: thành công<br/>`-EBUSY`: đang chạy<br/>`-ENOTSUP`: mode không hỗ trợ |
+| | `can_get_mode()` | Thread | `can_get_mode(const struct device *dev)` | Đọc chế độ hoạt động hiện tại đang được cấu hình trên bộ điều khiển CAN. | `can_mode_t` (Bitmask các cờ mode) |
+| | `can_set_bitrate()` | Thread | `can_set_bitrate(dev, uint32_t bitrate)` | Cấu hình tốc độ baud danh định (ví dụ: `500000` = 500 kbps). Gọi khi controller đang STOPPED. | `0`: thành công<br/>`-EBUSY`: controller đang chạy<br/>`-EINVAL`: bitrate sai |
+| | `can_start()` | Thread | `can_start(const struct device *dev)` | Đưa controller từ trạng thái **STOPPED** sang **STARTED**. Bắt đầu tham gia bus và xử lý frame. | `0`: thành công<br/>`-EALREADY`: đã chạy |
+| | `can_stop()` | Thread | `can_stop(const struct device *dev)` | Đưa controller từ **STARTED** về **STOPPED**. Ngắt kết nối khỏi bus để cho phép tái cấu hình mode/bitrate. | `0`: thành công<br/>`-EALREADY`: đã dừng |
+| **Lọc nhận phần cứng** | `can_add_rx_filter()` | Thread | `can_add_rx_filter(dev, callback, user_data, &filter)` | Đăng ký bộ lọc phần cứng (Filter Bank) gắn liền với **Callback ISR**. Phù hợp cho sự kiện khẩn cấp, không được gọi hàm blocking. | `>= 0`: Filter ID đã cấp<br/>`-ENOSPC`: hết Mailbox/Filter<br/>`-EINVAL`: filter sai |
+| | `can_add_rx_filter_msgq()` | Thread | `can_add_rx_filter_msgq(dev, &msgq, &filter)` | Đăng ký bộ lọc phần cứng tự động đẩy frame nhận được vào **Message Queue** (`k_msgq`), xử lý an toàn trong Thread. | `>= 0`: Filter ID đã cấp<br/>`-ENOSPC`: hết Filter Bank<br/>`-EINVAL`: filter sai |
+| | `can_remove_rx_filter()` | Thread | `can_remove_rx_filter(dev, int filter_id)` | Hủy đăng ký bộ lọc phần cứng theo `filter_id` đã cấp phát, giải phóng Filter Bank cho việc khác. | `void` |
+| | `CAN_MSGQ_DEFINE()` | Khai báo tĩnh | `CAN_MSGQ_DEFINE(name, depth)` | Macro khai báo tĩnh hàng đợi tin nhắn `k_msgq` có kích thước mỗi phần tử bằng `sizeof(struct can_frame)`. | Biến hàng đợi `struct k_msgq` |
+| | `can_get_max_filters()` | Thread | `can_get_max_filters(dev, bool ide)` | Lấy số lượng bộ lọc phần cứng tối đa mà chip hỗ trợ (`ide = false`: Standard 11-bit, `ide = true`: Extended 29-bit). | Số lượng bộ lọc (ví dụ 14 hoặc 28) |
+| **Truyền dữ liệu** | `can_send()` *(Đồng bộ)* | Thread | `can_send(dev, &frame, timeout, NULL, NULL)` | Gửi frame ở chế độ Blocking: Luồng chờ tối đa `timeout` đến khi frame truyền thành công ra bus (nhận được ACK). | `0`: gửi thành công<br/>`-EAGAIN`: timeout / không có ACK<br/>`-ENOSPC`: hết Mailbox |
+| | `can_send()` *(Bất đồng bộ)* | Thread / ISR | `can_send(dev, &frame, timeout, tx_callback, user_data)` | Gửi frame Non-blocking: Đẩy frame vào Mailbox rồi thoát ngay; Kernel gọi `tx_callback` khi truyền xong hoặc thất bại. | `0`: đã nhận vào Mailbox<br/>`-EAGAIN`: timeout chờ Mailbox<br/>`-ENOSPC`: hết Mailbox |
+| | `can_get_capabilities()` | Thread | `can_get_capabilities(dev, can_mode_t *cap)` | Đọc các tính năng phần cứng hỗ trợ (FD, Loopback, Listen-only, ...). | `0`: thành công |
+| **Quản lý lỗi & Khôi phục** | `can_get_state()` | Thread | `can_get_state(dev, &state, &err_cnt)` | Đọc trạng thái lỗi bus (`ERROR_ACTIVE`, `WARNING`, `PASSIVE`, `BUS_OFF`) và bộ đếm lỗi vật lý `tx_err_cnt` (TEC), `rx_err_cnt` (REC). | `0`: thành công<br/>`-ENOTSUP`: không hỗ trợ |
+| | `can_recover()` | Thread | `can_recover(dev, k_timeout_t timeout)` | Bắt đầu quy trình khôi phục controller thoát khỏi trạng thái `BUS-OFF` (chờ 128 chuỗi 11-bit recessive liên tiếp). | `0`: khôi phục thành công<br/>`-EAGAIN`: hết timeout |
+| | `can_set_state_change_callback()` | Thread | `can_set_state_change_callback(dev, cb, user_data)` | Đăng ký hàm callback kích hoạt tự động mỗi khi trạng thái lỗi bus thay đổi (ví dụ từ Active sang Passive). | `0`: thành công |
 
-2. **Gửi dữ liệu an toàn:**
-   * Trên Loopback: Có thể dùng `can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);`
-   * Trên Bus thật: **BẮT BUỘC** dùng callback `can_send(can_dev, &frame, K_MSEC(100), tx_cb, NULL);` kèm timeout để tránh bị treo luồng khi mất ACK.
+---
+
+#### 3.9.2. Bảng các API RTOS phối hợp trong hệ thống mạng CAN
+
+Hệ thống truyền thông CAN thời gian thực luôn kết hợp ngoại vi với các cơ chế điều phối của Kernel:
+
+| API Kernel RTOS | Ngữ cảnh gọi | Mục đích sử dụng trong ứng dụng CAN | Ví dụ minh họa trong Lab 3 |
+| :--- | :---: | :--- | :--- |
+| `k_msgq_get(&msgq, &frame, timeout)` | Thread | Lấy khung tin CAN từ hàng đợi ra xử lý. Cho phép luồng ngủ chờ an toàn, không chiếm dụng CPU khi chưa có frame đến. | Thread nhận cảm biến (`lab3_ex1`), Thread xử lý lệnh (`lab3_ex2`). |
+| `k_msgq_put(&msgq, &data, K_NO_WAIT)` | **ISR** / Thread | Đẩy nhanh dữ liệu từ Callback ngắt ISR vào hàng đợi để chuyển sang Thread xử lý nặng. | Nhận frame từ `can_add_rx_filter()` chuyển sang thread ghi log. |
+| `k_sem_init(&sem, initial, limit)` | Thread | Khởi tạo Semaphore làm tín hiệu nhịp tim hoặc cờ báo động. | Khởi tạo nhịp tim Watchdog trong `lab3_ex4`. |
+| `k_sem_give(&sem)` | **ISR** / Thread | Báo hiệu có frame Heartbeat gửi đến. **An toàn tuyệt đối khi gọi trong ISR.** | Callback nhận Heartbeat nhả cờ báo đối tác vẫn sống. |
+| `k_sem_take(&sem, timeout)` | Thread | Chờ tín hiệu đối tác. Nếu quá `timeout` (ví dụ 3 giây) không nhận được thì trả về `-EAGAIN` để kích hoạt báo động ngắt kết nối. | Thread Watchdog giám sát sống còn (`lab3_ex4`). |
+| `k_uptime_get_32()` | Bất kỳ | Lấy thời gian trôi qua từ lúc boot (đơn vị mili-giây, kiểu 32-bit). | Đóng gói trường timestamp `t_ms`, đo độ trễ Latency và thời gian khứ hồi RTT. |
+| `k_msleep(ms)` | Thread | Tạm dừng luồng theo chu kỳ định kỳ chính xác (tính bằng mili-giây). | Chu kỳ phát định kỳ 200 ms (`lab3_ex1`), phát Heartbeat 1000 ms (`lab3_ex4`). |
+
+---
+
+#### 3.9.3. Bảng Cấu trúc Dữ liệu, Macro & Cờ điều khiển cốt lõi
+
+| Cấu trúc / Macro | Định nghĩa & Giá trị | Ý nghĩa kỹ thuật |
+| :--- | :--- | :--- |
+| **`struct can_frame`** | Cấu trúc khung tin CAN tiêu chuẩn: | Đơn vị truyền nhận dữ liệu cơ bản trên bus. |
+| ├─ `.id` | `uint32_t` (11-bit hoặc 29-bit) | Định danh thông điệp (Identifier) quy định độ ưu tiên phân xử. |
+| ├─ `.dlc` | `uint8_t` (0 → 8 byte) | Data Length Code: số byte dữ liệu thực tế mang theo. |
+| ├─ `.flags` | `uint8_t` (tổ hợp cờ) | Các cờ thuộc tính: `CAN_FRAME_IDE`, `CAN_FRAME_RTR`, `CAN_FRAME_FDF`. |
+| └─ `.data[8]` | `uint8_t[8]` | Mảng byte chứa tải trọng thông điệp (Payload). |
+| **`struct can_filter`** | Cấu trúc bộ lọc phần cứng bxCAN: | Cấu hình cho 28 Filter Banks phần cứng tự động lọc frame. |
+| ├─ `.id` | `uint32_t` | Giá trị ID mong muốn so khớp. |
+| ├─ `.mask` | `uint32_t` | Mặt nạ bit lọc (`1`: bắt buộc khớp 100%, `0`: don't care). |
+| └─ `.flags` | `uint8_t` | Cờ lọc: `CAN_FILTER_IDE` (lọc ID 29-bit), `CAN_FILTER_DATA`, `CAN_FILTER_RTR`. |
+| `CAN_STD_ID_MASK` | `0x7FF` (`111 1111 1111_2`) | Mặt nạ 11-bit: Bắt buộc khớp chính xác 100% một ID chuẩn cụ thể. |
+| `CAN_EXT_ID_MASK` | `0x1FFFFFFF` (29-bit) | Mặt nạ 29-bit: Bắt buộc khớp chính xác 100% một Extended ID cụ thể. |
+| `CAN_FRAME_IDE` | Bit flag (`BIT(0)`) | Đánh dấu frame sử dụng Identifier mở rộng 29-bit (Extended Frame). |
+| `CAN_FRAME_RTR` | Bit flag (`BIT(1)`) | Đánh dấu frame là khung yêu cầu từ xa (Remote Frame, DLC >= 0 nhưng 0 byte data). |
+| `CAN_MODE_NORMAL` | Chế độ bus thực | Kết nối vật lý ra transceiver, tham gia truyền nhận và phát bit ACK đầy đủ. |
+| `CAN_MODE_LOOPBACK`| Chế độ kiểm tra nội bộ | Tự vòng TX sang RX bên trong vi điều khiển, tự sinh ACK, không phát ra ngoài chân chip. |
+| `CAN_MODE_LISTENONLY`| Chế độ nghe thụ động | Lắng nghe toàn bộ lưu lượng trên bus nhưng không bao giờ phát bit ACK (chế độ Sniffer an toàn). |
+
+---
+
+#### 3.9.4. Bảng mã lỗi Driver CAN thường gặp & Giải pháp xử lý
+
+| Mã lỗi trả về | Tên mã lỗi | Nguyên nhân xảy ra | Hướng xử lý & Khắc phục chuẩn |
+| :---: | :--- | :--- | :--- |
+| `0` | **Thành công** | Lệnh thực thi hoàn hảo, frame đã gửi/nhận xong. | Tiếp tục tiến trình bình thường. |
+| `-EAGAIN` (35) | **Try again / Timeout** | Hết thời gian chờ: Hết Mailbox truyền khả dụng, hoặc phát frame trên bus thật mà không nhận được bit ACK từ node đối tác. | Kiểm tra lại dây dẫn CANH/CANL, đảm bảo node đối tác đang mở nguồn và có chung bitrate. |
+| `-EBUSY` (16) | **Device Busy** | Cố gắng gọi hàm cấu hình (như `can_set_mode()`, `can_set_bitrate()`) khi controller đang chạy (`STARTED`). | Phải gọi `can_stop(dev)` trước, thực hiện thay đổi tham số, sau đó gọi lại `can_start(dev)`. |
+| `-ENOSPC` (28) | **No Space Left** | Hết tài nguyên phần cứng: Vượt quá số lượng Filter Banks tối đa (28 banks) hoặc hàng đợi Message Queue bị đầy. | Hủy bớt bộ lọc không dùng bằng `can_remove_rx_filter()`, hoặc tăng độ sâu `depth` của `CAN_MSGQ_DEFINE()`. |
+| `-EINVAL` (22) | **Invalid Argument** | Tham số không hợp lệ: DLC > 8, ID vượt quá dải 11-bit (`> 0x7FF`) mà không bật cờ `CAN_FRAME_IDE`. | Kiểm tra lại giá trị ID, DLC và cờ của cấu trúc `can_frame` hoặc `can_filter`. |
+| `-ENODEV` (19) | **No Such Device** | Con trỏ thiết bị `can_dev` không tồn tại hoặc node CAN trong Devicetree bị disable (`status = "disabled";`). | Bật lại ngoại vi trong `app.overlay`: `&can1 { status = "okay"; };`. |
+| `-EIO` (5) | **Input/Output Error** | Lỗi phần cứng nghiêm trọng: Controller đã rơi vào trạng thái `BUS-OFF` do tích lũy quá nhiều lỗi phát (TEC > 255). | Kiểm tra ngắn mạch đường dây, gạt công tắc trở kết cuối `SW13 = ON` và gọi `can_recover()`. |
+
+---
+
+#### 3.9.5. Chu trình khởi tạo 4 bước & Mẫu code chuẩn mực (Best Practices)
+
+```c
+/* =========================================================================
+ * MẪU KHỞI TẠO VÀ GIAO TIẾP CAN CHUẨN MỰC TRÊN ZEPHYR RTOS
+ * ========================================================================= */
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/can.h>
+
+/* Khởi tạo hàng đợi nhận 10 frame */
+CAN_MSGQ_DEFINE(can_rx_msgq, 10);
+
+/* Callback báo trạng thái gửi (Non-blocking) */
+static void can_tx_done_cb(const struct device *dev, int error, void *user_data)
+{
+    if (error != 0) {
+        printk("Loi truyen frame: %d (Mat ACK hoac dut day)\n", error);
+    }
+}
+
+int init_can_subsystem(void)
+{
+    /* Bước 1: Lấy thiết bị CAN từ Devicetree */
+    const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+    if (!device_is_ready(can_dev)) {
+        printk("CAN Device chua san sang!\n");
+        return -ENODEV;
+    }
+
+    /* Bước 2: Cài đặt chế độ hoạt động (KHI CONTROLLER ĐANG STOPPED) */
+    int ret = can_set_mode(can_dev, CAN_MODE_NORMAL);
+    if (ret < 0) {
+        printk("Loi cai dat mode: %d\n", ret);
+        return ret;
+    }
+
+    /* Bước 3: Cấu hình bộ lọc phần cứng (Hardware Filter) */
+    const struct can_filter my_filter = {
+        .id = 0x100,
+        .mask = CAN_STD_ID_MASK, // Khớp chính xác ID 0x100
+        .flags = 0,
+    };
+    int filter_id = can_add_rx_filter_msgq(can_dev, &can_rx_msgq, &my_filter);
+    if (filter_id < 0) {
+        printk("Khong the cai dat bo loc! Loi: %d\n", filter_id);
+        return filter_id;
+    }
+
+    /* Bước 4: Khởi động bộ điều khiển CAN */
+    ret = can_start(can_dev);
+    if (ret < 0) {
+        printk("Loi khoi dong CAN: %d\n", ret);
+        return ret;
+    }
+
+    printk("CAN Controller da khoi dong thanh cong! Filter ID: %d\n", filter_id);
+    return 0;
+}
+
+/* Gui frame an toan: Non-blocking voi timeout 100ms chong treo luong */
+int send_sensor_data(const struct device *can_dev, uint16_t sensor_val)
+{
+    struct can_frame frame = {
+        .id = 0x200,
+        .dlc = 2,
+        .flags = 0,
+    };
+    frame.data[0] = (uint8_t)(sensor_val >> 8);
+    frame.data[1] = (uint8_t)(sensor_val & 0xFF);
+
+    return can_send(can_dev, &frame, K_MSEC(100), can_tx_done_cb, NULL);
+}
+```
 
 ---
 
