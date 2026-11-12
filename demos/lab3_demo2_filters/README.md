@@ -8,10 +8,10 @@ Tài liệu hướng dẫn chi tiết về kỹ thuật **Hardware Acceptance Fi
 
 ### 1.1. Bộ lọc phần cứng bxCAN và Khung RTR là gì?
 * **Bộ lọc phần cứng (Hardware Acceptance Filter):** bxCAN tích hợp 28 Filter Banks độc lập. Khi có frame đến từ bus, phần cứng so khớp ID theo công thức:
-  $$(\text{Received_ID} \\ & \\ \text{Mask}) == (\text{Filter_ID} \\ & \\ \text{Mask})$$
-  * Bit Mask $= 1$: Bắt buộc bit tương ứng của ID nhận được phải **khớp 100%**.
-  * Bit Mask $= 0$: **Don't care** (0 hay 1 đều chấp nhận).
-  * Frame không khớp bị phần cứng loại bỏ ngay lập tức $$\rightarrow$$ **CPU tốn 0% chu kỳ lệnh!**
+  `(Received_ID & Mask) == (Filter_ID & Mask)`
+  * Bit Mask = 1: Bắt buộc bit tương ứng của ID nhận được phải **khớp 100%**.
+  * Bit Mask = 0: **Don't care** (0 hay 1 đều chấp nhận).
+  * Frame không khớp bị phần cứng loại bỏ ngay lập tức → **CPU tốn 0% chu kỳ lệnh!**
 * **Khung yêu cầu từ xa (Remote Transmission Request - RTR):** 
   * Là frame có cờ `CAN_FRAME_RTR`, DLC có thể mang giá trị nhưng **Data Field hoàn toàn rỗng (0 byte)**.
   * Dùng để yêu cầu node có dữ liệu phát nội dung lên bus.

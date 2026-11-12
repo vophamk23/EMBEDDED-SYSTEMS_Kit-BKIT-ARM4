@@ -11,20 +11,20 @@ Tài liệu hướng dẫn chi tiết về **Lý thuyết cốt lõi**, **Trình
   * `thread_controller` (Bộ điều khiển).
   * `thread_actuator` (Bộ chấp hành điều khiển 3 đèn).
 * **Định nghĩa giao thức truyền thông:**
-  * **ID `0x200` (Controller $$\rightarrow$$ Actuator):** Lệnh điều khiển. `DLC = 2`.
+  * **ID `0x200` (Controller → Actuator):** Lệnh điều khiển. `DLC = 2`.
     * `data[0]` = Mã đèn (0 = LED3, 1 = Y0, 2 = Y1).
     * `data[1]` = Trạng thái (0 = Tắt, 1 = Bật).
-  * **ID `0x201` (Actuator $$\rightarrow$$ Controller):** Phản hồi thực thi lệnh. `DLC = 3`.
+  * **ID `0x201` (Actuator → Controller):** Phản hồi thực thi lệnh. `DLC = 3`.
     * `data[0]` = Mã đèn.
     * `data[1]` = Trạng thái mới.
     * `data[2]` = Kết quả thực thi (0 = Thành công OK, 1 = Lỗi đèn không hợp lệ).
-  * **ID `0x202 RTR` (Controller $$\rightarrow$$ Actuator):** Khung yêu cầu từ xa, không có payload (`DLC = 0`, cờ `CAN_FRAME_RTR`): *"Báo cáo trạng thái tất cả đèn"*.
-  * **ID `0x202 DATA` (Actuator $$\rightarrow$$ Controller):** Khung dữ liệu trả lời RTR. `DLC = 1`.
+  * **ID `0x202 RTR` (Controller → Actuator):** Khung yêu cầu từ xa, không có payload (`DLC = 0`, cờ `CAN_FRAME_RTR`): *"Báo cáo trạng thái tất cả đèn"*.
+  * **ID `0x202 DATA` (Actuator → Controller):** Khung dữ liệu trả lời RTR. `DLC = 1`.
     * `data[0]` = Bitmap trạng thái (`bit0` = LED3, `bit1` = Y0, `bit2` = Y1).
 * **Kịch bản hoạt động của Controller:**
-  1. Bật lần lượt LED3 $$\rightarrow$$ Y0 $$\rightarrow$$ Y1 (cách nhau 1 giây).
+  1. Bật lần lượt LED3 → Y0 → Y1 (cách nhau 1 giây).
   2. Gửi khung RTR `0x202` để truy vấn trạng thái bitmap.
-  3. Tắt lần lượt LED3 $$\rightarrow$$ Y0 $$\rightarrow$$ Y1 (cách nhau 1 giây).
+  3. Tắt lần lượt LED3 → Y0 → Y1 (cách nhau 1 giây).
   4. Gửi lệnh cố ý sai (đèn số 5) để kiểm tra phản hồi lỗi NAK.
 * **Cấu hình Kernel bắt buộc:** Phải bật `CONFIG_CAN_ACCEPT_RTR=y` trong `prj.conf`.
 
@@ -177,11 +177,11 @@ sequenceDiagram
 
 | Mốc thời gian | Hành động của Controller | Hành động của Actuator | Trạng thái phần cứng |
 | :---: | :--- | :--- | :--- |
-| **$1000\\,\text{ms}$** | Gửi lệnh `0x200` [Đèn 0: BẬT] | Nhận lệnh $$\rightarrow$$ Bật LED3 $$\rightarrow$$ Trả `0x201` [OK] | **LED3 SÁNG** |
-| **$2000\\,\text{ms}$** | Gửi lệnh `0x200` [Đèn 1: BẬT] | Nhận lệnh $$\rightarrow$$ Bật Y0 $$\rightarrow$$ Trả `0x201` [OK] | **LED3 + Y0 SÁNG** |
-| **$3000\\,\text{ms}$** | Gửi lệnh `0x200` [Đèn 2: BẬT] | Nhận lệnh $$\rightarrow$$ Bật Y1 $$\rightarrow$$ Trả `0x201` [OK] | **CẢ 3 ĐÈN SÁNG** |
-| **$4000\\,\text{ms}$** | Gửi `0x202 RTR` truy vấn | Đóng gói bitmap `0x07` $$\rightarrow$$ Trả `0x202 DATA` | Controller in `Bitmap: 0x07 [ON ON ON]` |
-| **$8000\\,\text{ms}$** | Gửi lệnh `0x200` [Đèn 5: BẬT] | Kiểm tra `led_idx >= 3` $$\rightarrow$$ Trả `0x201` [ERROR] | Controller in `LOI KHONG HOP LE` |
+| **1000 ms** | Gửi lệnh `0x200` [Đèn 0: BẬT] | Nhận lệnh → Bật LED3 → Trả `0x201` [OK] | **LED3 SÁNG** |
+| **2000 ms** | Gửi lệnh `0x200` [Đèn 1: BẬT] | Nhận lệnh → Bật Y0 → Trả `0x201` [OK] | **LED3 + Y0 SÁNG** |
+| **3000 ms** | Gửi lệnh `0x200` [Đèn 2: BẬT] | Nhận lệnh → Bật Y1 → Trả `0x201` [OK] | **CẢ 3 ĐÈN SÁNG** |
+| **4000 ms** | Gửi `0x202 RTR` truy vấn | Đóng gói bitmap `0x07` → Trả `0x202 DATA` | Controller in `Bitmap: 0x07 [ON ON ON]` |
+| **8000 ms** | Gửi lệnh `0x200` [Đèn 5: BẬT] | Kiểm tra `led_idx >= 3` → Trả `0x201` [ERROR] | Controller in `LOI KHONG HOP LE` |
 
 ---
 
@@ -189,7 +189,7 @@ sequenceDiagram
 
 | Cơ chế kỹ thuật | Nếu KHÔNG CÓ cơ chế này | Hậu quả thực tế trên hệ thống |
 | :--- | :--- | :--- |
-| **Kiểm tra `!(flags & RTR)` ở Controller** | Controller không kiểm tra cờ RTR khi nhận `0x202`. | Ở chế độ Loopback, Controller tự nhận lại frame RTR rỗng của chính mình $$\rightarrow$$ đọc nhầm dữ liệu rác thành trạng thái đèn. |
+| **Kiểm tra `!(flags & RTR)` ở Controller** | Controller không kiểm tra cờ RTR khi nhận `0x202`. | Ở chế độ Loopback, Controller tự nhận lại frame RTR rỗng của chính mình → đọc nhầm dữ liệu rác thành trạng thái đèn. |
 | **Cơ chế phản hồi kết quả (ACK/NAK)** | Hệ thống chỉ gửi lệnh 1 chiều không cần phản hồi. | Khi gửi lệnh điều khiển thiết bị bị hỏng hoặc mã đèn sai, bộ điều khiển không hề hay biết, dẫn đến mất kiểm soát an toàn. |
 | **Bật `CONFIG_CAN_ACCEPT_RTR=y`** | Quên bật cấu hình trong `prj.conf`. | Mọi frame RTR sẽ bị driver của Zephyr **âm thầm hủy bỏ (drop)** ngay tại tầng phần mềm, Actuator không bao giờ nhận được truy vấn. |
 
@@ -214,10 +214,10 @@ sequenceDiagram
   * **Filter ID:** `0x200`
   * **Filter Mask:** `0x7FE` (`111 1111 1110_2`)
   * *Kiểm chứng công thức:*
-    * `0x200 & 0x7FE = 0x200 == 0x200` (KHỚP $$\rightarrow$$ NHẬN)
-    * `0x201 & 0x7FE = 0x200 == 0x200` (KHỚP $$\rightarrow$$ NHẬN)
-    * `0x202 & 0x7FE = 0x202 != 0x200` (SAI $$\rightarrow$$ LOẠI)
-    * `0x203 & 0x7FE = 0x202 != 0x200` (SAI $$\rightarrow$$ LOẠI)
+    * `0x200 & 0x7FE = 0x200 == 0x200` (KHỚP → NHẬN)
+    * `0x201 & 0x7FE = 0x200 == 0x200` (KHỚP → NHẬN)
+    * `0x202 & 0x7FE = 0x202 != 0x200` (SAI → LOẠI)
+    * `0x203 & 0x7FE = 0x202 != 0x200` (SAI → LOẠI)
 
 ### ❓ Câu (c): Vì sao không dùng ID 0x000 cho lệnh điều khiển đèn trong một hệ thống thật?
 * Trong chuẩn CAN, ID `0x000` có giá trị số nhỏ nhất nên có **độ ưu tiên cao nhất tuyệt đối trên toàn bộ bus**. 

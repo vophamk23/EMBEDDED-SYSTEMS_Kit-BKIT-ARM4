@@ -10,12 +10,12 @@ Tài liệu hướng dẫn chi tiết về **Lý thuyết cốt lõi**, **Trình
 * **Môi trường thực thi:** Chạy trên 1 kit ở chế độ Loopback (`CAN_MODE_LOOPBACK`).
 * **Quy cách gói tin cảm biến (ID chuẩn `0x321`, DLC = 8 byte, đóng gói Big-Endian):**
   * **Byte 0–1:** `seq` (uint16_t) — Bộ đếm số thứ tự frame, tăng 1 sau mỗi lần gửi.
-  * **Byte 2–3:** `temp_x10` (uint16_t) — Nhiệt độ $\times 10$ (giả lập tăng dần từ 250 đến 300 rồi quay về 250, tương ứng $25.0^{\circ}\text{C} $\rightarrow$ 30.0^{\circ}\text{C}$).
+  * **Byte 2–3:** `temp_x10` (uint16_t) — Nhiệt độ × 10 (giả lập tăng dần từ 250 đến 300 rồi quay về 250, tương ứng 25.0°C → 30.0°C).
   * **Byte 4–7:** `t_ms` (uint32_t) — Mốc thời gian gửi lấy bằng `k_uptime_get_32()`.
 * **Luồng phát (`thread_sensor_tx`):** Chu kỳ gửi định kỳ đúng **200 ms** (5 frame/giây).
 * **Luồng nhận (`thread_sensor_rx`):**
   * Nhận qua `can_add_rx_filter_msgq()` với bộ lọc chỉ nhận đúng ID `0x321`.
-  * Giải mã Big-Endian 3 trường dữ liệu, in ra màn hình dạng `25.3 C` và độ trễ $\text{Latency} = k_uptime_get_32() - t_{\text{ms}}$.
+  * Giải mã Big-Endian 3 trường dữ liệu, in ra màn hình dạng `25.3 C` và độ trễ `Latency = k_uptime_get_32() - t_ms`.
   * Kiểm tra tính liên tục của `seq`: Nếu `seq != expected_seq` thì tăng biến đếm `gap_count` và bật ngõ ra `Y0` (PE5).
   * Đảo trạng thái đèn **LED3 (PE4)** mỗi khi nhận thành công một frame.
 * **Luồng thống kê (`thread_stats`):** Mỗi **5 giây** in một dòng thống kê: số frame đã gửi, đã nhận và `gap_count`.
@@ -139,11 +139,11 @@ sequenceDiagram
 
 | Thời gian (ms) | Thực thể | Dữ liệu Payload (Big-Endian) | Hành động & Trạng thái |
 | :---: | :--- | :--- | :--- |
-| **$500\\,\text{ms}$** | `thread_sensor_tx` | `seq=0, temp=250 (25.0°C), t=500` | Gửi frame 0x321 vào CAN loopback. |
-| **$500\\,\text{ms}$** | `thread_sensor_rx` | Nhận frame `seq=0` | Đảo LED3, `Latency = 0ms`, `gap_count = 0`. |
-| **$700\\,\text{ms}$** | `thread_sensor_tx` | `seq=1, temp=251 (25.1°C), t=700` | Gửi frame tiếp theo sau 200 ms. |
-| **$700\\,\text{ms}$** | `thread_sensor_rx` | Nhận frame `seq=1` | `seq == expected (1)` $$\rightarrow$$ Bình thường, đảo LED3. |
-| **$5500\\,\text{ms}$**| `thread_stats` | Đọc thống kê | In: `[THONG KE 5S] Da gui: 25 | Da nhan: 25 | n_gap: 0`. |
+| **500 ms** | `thread_sensor_tx` | `seq=0, temp=250 (25.0°C), t=500` | Gửi frame 0x321 vào CAN loopback. |
+| **500 ms** | `thread_sensor_rx` | Nhận frame `seq=0` | Đảo LED3, `Latency = 0ms`, `gap_count = 0`. |
+| **700 ms** | `thread_sensor_tx` | `seq=1, temp=251 (25.1°C), t=700` | Gửi frame tiếp theo sau 200 ms. |
+| **700 ms** | `thread_sensor_rx` | Nhận frame `seq=1` | `seq == expected (1)` → Bình thường, đảo LED3. |
+| **5500 ms**| `thread_stats` | Đọc thống kê | In: `[THONG KE 5S] Da gui: 25 | Da nhan: 25 | n_gap: 0`. |
 
 ---
 
@@ -170,19 +170,19 @@ sequenceDiagram
   frame.data[7] = (uint8_t)(t_ms & 0xFF);
   ```
 * **Giải mã nhầm theo Little-Endian:**
-  * Bên gửi đóng gói `seq = 0x0102` $$\rightarrow$$ `data[0] = 0x01`, `data[1] = 0x02`.
+  * Bên gửi đóng gói `seq = 0x0102` → `data[0] = 0x01`, `data[1] = 0x02`.
   * Bên nhận đọc Little-Endian (byte thấp đứng trước):
-    $$\text{Value} = \text{data}[0] \mid (\text{data}[1] \ll 8) = 0x01 \mid (0x02 \ll 8) = 0x0201 = 513\\,\text{(thập phân)}$$
+    $$\text{Value} = \text{data}[0] \mid (\text{data}[1] \ll 8) = 0x01 \mid (0x02 \ll 8) = 0x0201 = 513$$
 
 ### ❓ Câu (b): Một frame 8 byte dài khoảng 111 bit. Ở 500 kbit/s, mất bao lâu để gửi? Bus tải tối đa bao nhiêu frame/s? Bài này chiếm bao nhiêu % tải bus?
 * **Thời gian truyền một frame:**
-  $$t_{\text{frame}} = \frac{111\\,\text{bit}}{500.000\\,\text{bit/s}} = 0,222\\,\text{ms} = 222\\,\mu\text{s}$$
+  $$t_{\text{frame}} = \frac{111\,\text{bit}}{500.000\,\text{bit/s}} = 0,222\,\text{ms} = 222\,\mu\text{s}$$
 * **Tải tối đa của đường bus:**
-  $$\text{Max Frame Rate} = \frac{1}{0,000222\\,\text{s}} \approx 4504,5\\,\text{frame/giây}$$
+  $$\text{Max Frame Rate} = \frac{1}{0,000222\,\text{s}} \approx 4504,5\,\text{frame/giây}$$
 * **Tỷ lệ tải chiếm dụng của Bài 1:**
-  * Chu kỳ phát là 200 ms $$\rightarrow$$ Tần số phát $f = 5\\,\text{frame/s}$.
+  * Chu kỳ phát là 200 ms → Tần số phát f = 5 frame/s.
   * Tải bus chiếm dụng là:
-    $$%\text{Bus Load} = \frac{5}{4504,5} \times 100% \approx 0,111%$$
+    $$\text{Bus Load} = \frac{5}{4504{,}5} \times 100\% \approx 0{,}111\%$$
 
 ### ❓ Câu (c): Vì sao ở chế độ loopback không cần node nào khác gửi ACK?
 * Ở chế độ Loopback, khối điều khiển bxCAN bên trong STM32 tự động ngắt kết nối với chân vật lý bên ngoài và tự nối đường truyền TX nội bộ vào đường nhận RX. Đồng thời, **phần cứng bxCAN tự động sinh bit Dominant (0) vào khe ACK** cho chính frame nó phát ra, do đó không cần bất kỳ node nào khác gửi ACK.

@@ -1,4 +1,4 @@
-# 🚗 LAB 3: MẠNG TRUYỀN THÔNG CAN BUS VÀ HỆ THỐNG PHÂN TÁN TRONG ZEPHYR RTOS
+﻿# 🚗 LAB 3: MẠNG TRUYỀN THÔNG CAN BUS VÀ HỆ THỐNG PHÂN TÁN TRONG ZEPHYR RTOS
 ### Lý thuyết chuyên sâu về Giao thức CAN, So sánh UART - SPI - I2C - CAN, Bộ điều khiển bxCAN, Bộ lọc ID/Mask & Hệ thống 3 Demo + 5 Exercise
 
 > **Trường Đại học Bách Khoa - ĐHQG-HCM**  
@@ -44,11 +44,11 @@
 ## 🎯 1. Mục tiêu thí nghiệm
 
 Sau bài thực hành này, người học có thể:
-1. **Làm chủ tầng vật lý và giao thức CAN:** Giải thích cặn kẽ nguyên lý tín hiệu vi sai, đặc tính Dominant/Recessive, cơ chế "AND dây" (Wired-AND), vai trò triệt tiêu sóng phản xạ của điện trở kết cuối $120\,\Omega$ và cấu trúc chi tiết từng trường của khung tin CAN.
+1. **Làm chủ tầng vật lý và giao thức CAN:** Giải thích cặn kẽ nguyên lý tín hiệu vi sai, đặc tính Dominant/Recessive, cơ chế "AND dây" (Wired-AND), vai trò triệt tiêu sóng phản xạ của điện trở kết cuối 120 Ω và cấu trúc chi tiết từng trường của khung tin CAN.
 2. **So sánh bản chất lập trình giữa các chuẩn giao tiếp:** Phân biệt rõ sự khác nhau về mô hình dữ liệu (Data Paradigm), cơ chế địa chỉ và xử lý thời gian thực giữa **UART, SPI, I2C và CAN**.
 3. **Cấu hình ngoại vi bxCAN trên Zephyr RTOS:** Tích hợp bộ điều khiển `can1` của Kit BKIT ARM4 thông qua Devicetree (`app.overlay`) và Kconfig (`prj.conf`).
 4. **Thành thạo hệ thống API CAN của Zephyr RTOS:**
-   - Khởi tạo theo đúng quy trình chuẩn: `can_set_mode()` $\rightarrow$ Thêm bộ lọc $\rightarrow$ `can_start()`.
+   - Khởi tạo theo đúng quy trình chuẩn: `can_set_mode()` → Thêm bộ lọc → `can_start()`.
    - Gửi frame an toàn ở chế độ Loopback và Bus thật (sử dụng callback bất đồng bộ kèm timeout để chống treo luồng).
    - Thiết lập bộ lọc phần cứng (Hardware Acceptance Filter) theo cơ chế ID & Mask để phân luồng trực tiếp vào Message Queue (`CAN_MSGQ_DEFINE`).
 5. **Xây dựng hệ thống nhúng phân tán đa vi điều khiển:** Triển khai các giao thức thời gian thực như Command/Response, Heartbeat giám sát sống còn với Watchdog Semaphore, đo độ trễ RTT (Ping-Pong) và máy trạng thái đèn giao thông phân tán có cơ chế bảo an Fail-Safe khi đứt đường truyền.
@@ -64,7 +64,7 @@ Sau bài thực hành này, người học có thể:
   * Chân phát dữ liệu: **PB9** (`CAN1_TX`)
 * **Cầu đấu dây tín hiệu CAN:** Khối 3 cọc vít đấu dây gồm `CAN_H`, `CAN_L` và `GND`.
 * **Công tắc điện trở kết cuối SW13:**
-  * Vị trí **ON**: Kích hoạt điện trở kết cuối $120\,\Omega$ trên bo mạch.
+  * Vị trí **ON**: Kích hoạt điện trở kết cuối 120 Ω trên bo mạch.
   * Vị trí **OFF**: Ngắt điện trở kết cuối.
   *(Quy tắc: Khi nối 2 kit thành bus vật lý, gạt SW13 = ON trên cả 2 kit).*
 * **Đèn LED hiển thị trạng thái:**
@@ -90,27 +90,27 @@ $$V_{\text{diff}} = V_{\text{CANH}} - V_{\text{CANL}}$$
 ```
 
 * **Trạng thái Recessive (Bit 1 - Lặn):** 
-  Transceiver thả nổi đường truyền. Cả hai dây đều ở điện áp nghỉ khoảng $2.5\\,\text{V}$. Hiệu điện thế $V_{\text{diff}} \approx 0\\,\text{V}$ (nằm trong dải an toàn $-0.5\\,\text{V} $\rightarrow$ +0.5\\,\text{V}$).
+  Transceiver thả nổi đường truyền. Cả hai dây đều ở điện áp nghỉ khoảng 2.5V. Hiệu điện thế V_diff ≈ 0V (nằm trong dải an toàn $-0.5\,\text{V} → +0.5\,\text{V}$).
 * **Trạng thái Dominant (Bit 0 - Trội):** 
-  Transceiver tích cực lái dòng điện, kéo `CANH` lên khoảng $3.5\\,\text{V}$ và dìm `CANL` xuống khoảng $1.5\\,\text{V}$. Hiệu điện thế $V_{\text{diff}} \approx 2.0\\,\text{V}$ (nằm trong dải $1.5\\,\text{V} $\rightarrow$ 3.0\\,\text{V}$).
+  Transceiver tích cực lái dòng điện, kéo `CANH` lên khoảng 3.5V và dìm `CANL` xuống khoảng 1.5V. Hiệu điện thế V_diff ≈ 2.0V (nằm trong dải $1.5\,\text{V} → 3.0\,\text{V}$).
 
 > [!IMPORTANT]
 > **Nguyên lý "Wired-AND" (AND dây):**
-> Vì trạng thái Dominant (0) được kích hoạt chủ động bằng dòng điện, nếu trên bus có nhiều node cùng truyền tại một thời điểm, chỉ cần **MỘT node phát mức Dominant (0)** thì hiệu điện thế $V_{\text{diff}}$ lập tức nhảy lên $2.0\\,\text{V}$, ép toàn bộ bus về mức Dominant (0). 
+> Vì trạng thái Dominant (0) được kích hoạt chủ động bằng dòng điện, nếu trên bus có nhiều node cùng truyền tại một thời điểm, chỉ cần **MỘT node phát mức Dominant (0)** thì hiệu điện thế V_diff lập tức nhảy lên 2.0V, ép toàn bộ bus về mức Dominant (0). 
 > **Dominant (0) luôn luôn thắng và đè bẹp Recessive (1)!** Đây chính là nền tảng cốt lõi của cơ chế phân xử tranh chấp không phá hủy và cơ chế gửi ACK.
 
 ---
 
 ### 3.2. Điện trở kết cuối 120 Ohm và Dây GND chung
 
-1. **Điện trở kết cuối $120\\,\Omega$ (Termination Resistor):**
-   * Tín hiệu điện từ truyền trên dây cáp đồng với tốc độ xấp xỉ $200.000\\,\text{km/s}$. Khi tín hiệu gặp đầu mút hở mạch, năng lượng sóng bị dội ngược lại (hiện tượng sóng phản xạ - Wave Reflection), gây giao thoa phá hủy và làm méo dạng sườn xung của các bit tiếp theo.
-   * Để hấp thụ hoàn toàn sóng phản xạ, mạng CAN bắt buộc phải có **đúng 2 điện trở $120\\,\Omega$ ở hai đầu mút xa nhất** của đường bus. Điện trở tương đương toàn bus đo giữa CANH và CANL là:
-     $$R_{\text{bus}} = 120\\,\Omega \parallel 120\\,\Omega = 60\\,\Omega$$
-   * *Trên Kit BKIT ARM4:* Tích hợp sẵn công tắc gạt **SW13**. Gạt sang **ON** để đóng điện trở $120\\,\Omega$ vào mạng.
+1. **Điện trở kết cuối 120 Ω (Termination Resistor):**
+   * Tín hiệu điện từ truyền trên dây cáp đồng với tốc độ xấp xỉ 200.000 km/s. Khi tín hiệu gặp đầu mút hở mạch, năng lượng sóng bị dội ngược lại (hiện tượng sóng phản xạ - Wave Reflection), gây giao thoa phá hủy và làm méo dạng sườn xung của các bit tiếp theo.
+   * Để hấp thụ hoàn toàn sóng phản xạ, mạng CAN bắt buộc phải có **đúng 2 điện trở 120 Ω ở hai đầu mút xa nhất** của đường bus. Điện trở tương đương toàn bus đo giữa CANH và CANL là:
+     $$R_{\text{bus}} = 120\,\Omega \parallel 120\,\Omega = 60\,\Omega$$
+   * *Trên Kit BKIT ARM4:* Tích hợp sẵn công tắc gạt **SW13**. Gạt sang **ON** để đóng điện trở 120 Ω vào mạng.
 2. **Dây nối đất chung (Common GND):**
-   * Dù CAN là truyền thông vi sai, bộ thu TJA1050 chỉ hoạt động đúng khi điện áp của mỗi dây so với đất của transceiver nằm trong dải điện áp Common-mode cho phép ($-12\\,\text{V} $\rightarrow$ +12\\,\text{V}$).
-   * Nếu 2 kit cắm vào 2 nguồn điện khác nhau (2 laptop hoặc 2 adapter), điện thế đất của chúng có thể lệch nhau hàng chục vôn $$\rightarrow$$ Làm cháy transceiver hoặc sai lệch bit hoàn toàn. **Do đó, bắt buộc phải nối dây GND giữa các kit!**
+   * Dù CAN là truyền thông vi sai, bộ thu TJA1050 chỉ hoạt động đúng khi điện áp của mỗi dây so với đất của transceiver nằm trong dải điện áp Common-mode cho phép ($-12\,\text{V} → +12\,\text{V}$).
+   * Nếu 2 kit cắm vào 2 nguồn điện khác nhau (2 laptop hoặc 2 adapter), điện thế đất của chúng có thể lệch nhau hàng chục vôn → Làm cháy transceiver hoặc sai lệch bit hoàn toàn. **Do đó, bắt buộc phải nối dây GND giữa các kit!**
 
 ---
 
@@ -124,7 +124,7 @@ Trong lập trình hệ thống nhúng, việc hiểu rõ sự khác biệt gi�
 | :--- | :--- | :--- | :--- | :--- |
 | **Kiến trúc mạng** | Điểm - Điểm (Point-to-Point) | Master - Multi-Slave | Master - Multi-Slave | **Đa chủ phân tán (Multi-Master / Peer)** |
 | **Số lượng dây dẫn** | 2 dây (`TX`, `RX`) + `GND` | 4 dây (`MOSI`, `MISO`, `SCK`, `CS`) | 2 dây (`SDA`, `SCL`) + `GND` | **2 dây vi sai (`CANH`, `CANL`) + `GND`** |
-| **Tầng vật lý** | Single-ended (0V / 3.3V) | Single-ended (0V / 3.3V) | Open-drain (kéo trở pull-up) | **Tín hiệu vi sai ($V_{\text{diff}} = 2.0\\,\text{V}$)** |
+| **Tầng vật lý** | Single-ended (0V / 3.3V) | Single-ended (0V / 3.3V) | Open-drain (kéo trở pull-up) | **Tín hiệu vi sai (V_diff = 2.0V)** |
 | **Khoảng cách truyền** | Ngắn (< 2m với TTL) | Rất ngắn (< 30cm) | Ngắn (< 1m trên cùng PCB) | **Rất xa (lên tới 1km @ 50kbps, 40m @ 1Mbps)** |
 | **Đơn vị truyền nhận** | Byte stream (dòng byte thô) | Shift register byte-by-byte | Byte thanh ghi (`reg_addr` + `data`) | **Frame hoàn chỉnh (ID + DLC + Data[8])** |
 | **Cơ chế định danh** | Không có | Chọn chân phần cứng Chip Select (`CS`) | Địa chỉ Slave 7-bit hoặc 10-bit | **ID gói tin (11-bit hoặc 29-bit) chỉ nội dung** |
@@ -187,7 +187,7 @@ Khung dữ liệu chuẩn (CAN 2.0A - Standard 11-bit ID) có cấu trúc vật 
      * Trong **Remote Frame (RTR)**: RTR = Recessive (1).
      * *Hệ quả:* Nếu một node phát Data Frame và một node phát Remote Frame có cùng ID, **Data Frame luôn luôn thắng phân xử!**
 3. **Control Field (2 bit):** Chứa bit `IDE` (Identifier Extension: 0 = Standard 11-bit, 1 = Extended 29-bit) và bit dự trữ `r0`.
-4. **DLC (Data Length Code - 4 bit):** Mã hóa số byte dữ liệu ($0 $\rightarrow$ 8$ byte).
+4. **DLC (Data Length Code - 4 bit):** Mã hóa số byte dữ liệu (0 → 8 byte).
 5. **Data Field (0 đến 8 byte):** Dữ liệu payload hữu ích.
 6. **CRC Field (16 bit):** Mã kiểm tra dư thừa tuần hoàn CRC 15 bit + 1 bit phân cách CRC Delimiter (Recessive).
 7. **ACK Field (2 bit):**
@@ -202,7 +202,7 @@ Khung dữ liệu chuẩn (CAN 2.0A - Standard 11-bit ID) có cấu trúc vật 
 Khi đường bus đang rảnh (Bus Idle), nếu hai hoặc nhiều node cùng bắt đầu gửi khung tin cùng một lúc:
 * Mỗi node vừa phát từng bit của trường Arbitration Field, vừa đồng thời **đọc ngược lại điện áp thực tế trên bus**.
 * Vì tính chất "Wired-AND": Dominant (0) đè bẹp Recessive (1).
-* Nếu một node phát bit 1 (Recessive) nhưng đọc về thấy bus mang giá trị 0 (Dominant) $$\rightarrow$$ Node đó hiểu rằng có một node khác có độ ưu tiên cao hơn đang phát $$\rightarrow$$ **Lập tức dừng phát ngay trong chu kỳ bit đó, chuyển sang chế độ nhận mà KHÔNG làm gián đoạn gói tin của node thắng!**
+* Nếu một node phát bit 1 (Recessive) nhưng đọc về thấy bus mang giá trị 0 (Dominant) → Node đó hiểu rằng có một node khác có độ ưu tiên cao hơn đang phát → **Lập tức dừng phát ngay trong chu kỳ bit đó, chuyển sang chế độ nhận mà KHÔNG làm gián đoạn gói tin của node thắng!**
 
 ```
            Bit 10 9 8 7 6 5 4 3 2   Bit 1    Bit 0
@@ -218,13 +218,13 @@ Khi đường bus đang rảnh (Bus Idle), nếu hai hoặc nhiều node cùng b
 
 ### 3.6. Định thời bit (Bit Timing) & Điểm lấy mẫu
 
-Mỗi bit CAN được chia thành nhiều khoảng thời gian cơ sở gọi là **Time Quantum ($t_q$)**. Một chu kỳ bit danh định gồm 4 phân đoạn:
-1. **Sync_Seg (1 $t_q$):** Đoạn đồng bộ cạnh xuống của tín hiệu.
-2. **Prop_Seg ($1 $\rightarrow$ 8\\,t_q$):** Bù trễ truyền dẫn vật lý trên đường cáp và qua transceiver.
-3. **Phase_Seg1 ($1 $\rightarrow$ 8\\,t_q$):** Bù trừ sai lệch pha của bộ dao động.
-4. **Phase_Seg2 ($2 $\rightarrow$ 8\\,t_q$):** Phân đoạn pha thứ hai kết thúc bit.
+Mỗi bit CAN được chia thành nhiều khoảng thời gian cơ sở gọi là **Time Quantum (`t_q`)**. Một chu kỳ bit danh định gồm 4 phân đoạn:
+1. **Sync_Seg (1 `t_q`):** Đoạn đồng bộ cạnh xuống của tín hiệu.
+2. **Prop_Seg (1 → 8 `t_q`):** Bù trễ truyền dẫn vật lý trên đường cáp và qua transceiver.
+3. **Phase_Seg1 (1 → 8 `t_q`):** Bù trừ sai lệch pha của bộ dao động.
+4. **Phase_Seg2 (2 → 8 `t_q`):** Phân đoạn pha thứ hai kết thúc bit.
 
-* **Điểm lấy mẫu (Sample Point):** Nằm giữa Phase_Seg1 và Phase_Seg2, thường được cấu hình từ **$75%$ đến $87.5%$** chiều dài bit.
+* **Điểm lấy mẫu (Sample Point):** Nằm giữa Phase_Seg1 và Phase_Seg2, thường được cấu hình từ **75% đến 87.5%** chiều dài bit.
 * Trong Zephyr RTOS, bạn chỉ cần khai báo `bitrate = <500000>;` trong Devicetree, driver CAN của Zephyr sẽ tự động tính toán prescaler và các tham số phân đoạn bit tối ưu.
 
 ---
@@ -244,14 +244,14 @@ stateDiagram-v2
     BusOff --> [*]: Khởi động lại phần cứng (128 chuỗi 11-bit)
 ```
 
-1. **ERROR-ACTIVE (Bình thường):** $TEC < 96, REC < 96$. Được quyền phát Active Error Flag (6 bit dominant) khi thấy lỗi.
-2. **ERROR-WARNING:** $TEC \ge 96$ hoặc $REC \ge 96$. Cảnh báo đường truyền bắt đầu xấu.
-3. **ERROR-PASSIVE (Lỗi nghiêm trọng):** $TEC > 127$ hoặc $REC > 127$. Chỉ được phát Passive Error Flag (6 bit recessive) và phải đợi thêm 8 bit Suspend Transmission trước khi được gửi gói tin mới.
-4. **BUS-OFF (Tự ngắt bảo vệ):** $TEC > 255$. Node tự động ngắt hoàn toàn khỏi mạng để bảo vệ hệ thống.
+1. **ERROR-ACTIVE (Bình thường):** TEC < 96, REC < 96. Được quyền phát Active Error Flag (6 bit dominant) khi thấy lỗi.
+2. **ERROR-WARNING:** TEC ≥ 96 hoặc REC ≥ 96. Cảnh báo đường truyền bắt đầu xấu.
+3. **ERROR-PASSIVE (Lỗi nghiêm trọng):** TEC > 127 hoặc REC > 127. Chỉ được phát Passive Error Flag (6 bit recessive) và phải đợi thêm 8 bit Suspend Transmission trước khi được gửi gói tin mới.
+4. **BUS-OFF (Tự ngắt bảo vệ):** TEC > 255. Node tự động ngắt hoàn toàn khỏi mạng để bảo vệ hệ thống.
 
 > [!NOTE]
 > **Hiện tượng đặc thù khi 1 Kit đứng một mình:**
-> Khi chỉ có 1 kit phát trên bus thật (không có kit thứ 2 ACK), lỗi ACK Error xảy ra liên tục $$\rightarrow$$ TEC tăng mỗi lần $+8$ lên tới 128 $$\rightarrow$$ Chuyển sang `ERROR-PASSIVE`.
+> Khi chỉ có 1 kit phát trên bus thật (không có kit thứ 2 ACK), lỗi ACK Error xảy ra liên tục → TEC tăng mỗi lần +8 lên tới 128 → Chuyển sang `ERROR-PASSIVE`.
 > **Quy chuẩn ISO 11898 quy định:** Khi node đã ở trạng thái Error-Passive, lỗi thiếu ACK sẽ **KHÔNG làm tăng TEC nữa**. Do đó node không bao giờ bị rơi vào `BUS-OFF` chỉ vì đối tác tắt nguồn!
 
 ---
@@ -259,19 +259,19 @@ stateDiagram-v2
 ### 3.8. Bộ lọc nhận phần cứng bxCAN (Hardware Acceptance Filter ID & Mask)
 
 bxCAN trên STM32F407 có 28 Filter Banks dùng cơ chế **ID** và **Mask**:
-$$\text{Match} = ((\text{Received_ID} \oplus \text{Filter_ID}) \\ & \\ \text{Mask}) == 0$$
-Tương đương: **$(\text{Received_ID} \\ & \\ \text{Mask}) == (\text{Filter_ID} \\ & \\ \text{Mask})$**
+`Match = ((Received_ID ^ Filter_ID) & Mask) == 0`
+Tương đương: **`(Received_ID & Mask) == (Filter_ID & Mask)`**
 
 * **Ý nghĩa Bit Mask:**
-  * Bit Mask $= 1$: Bắt buộc bit tương ứng của ID nhận được phải **GIỐNG HỆT** bit của `Filter_ID`.
-  * Bit Mask $= 0$: **Don't care** (Chấp nhận bất kể là 0 hay 1).
+  * Bit Mask = 1: Bắt buộc bit tương ứng của ID nhận được phải **GIỐNG HỆT** bit của `Filter_ID`.
+  * Bit Mask = 0: **Don't care** (Chấp nhận bất kể là 0 hay 1).
 
 * **Các trường hợp kinh điển:**
   * **Nhận chính xác 1 ID duy nhất `0x080`:**
     * `Filter_ID = 0x080`, `Mask = 0x7FF` (`CAN_STD_ID_MASK`).
   * **Nhận dải 16 ID liên tiếp từ `0x4A0` đến `0x4AF`:**
     * `0x4A0` = `0100 1010 0000_2`, `0x4AF` = `0100 1010 1111_2`.
-    * 7 bit đầu cố định, 4 bit cuối tùy biến $$\rightarrow$$ `Filter_ID = 0x4A0`, `Mask = 0x7F0`.
+    * 7 bit đầu cố định, 4 bit cuối tùy biến → `Filter_ID = 0x4A0`, `Mask = 0x7F0`.
   * **Nhận cả 2 ID `0x200` và `0x201` (loại `0x202` và `0x203`):**
     * `Filter_ID = 0x200`, `Mask = 0x7FE` (bỏ qua bit 0, kiểm tra bit 1 phải bằng 0).
 
@@ -378,7 +378,7 @@ lab3_canbus/
   * `thread_rx` (Priority 7): Lấy frame từ hàng đợi `CAN_MSGQ_DEFINE(rx_msgq, 10)`, in mã hex ra màn hình và đảo trạng thái LED3 (PE4).
 * **Trình tự đọc hiểu mã nguồn:**
   1. Khai báo hàng đợi nhận: `CAN_MSGQ_DEFINE(rx_msgq, 10);`
-  2. Hàm `main()`: `can_set_mode(can_dev, CAN_MODE_LOOPBACK)` $$\rightarrow$$ `can_add_rx_filter_msgq(can_dev, &rx_msgq, &filter)` $$\rightarrow$$ `can_start(can_dev)`.
+  2. Hàm `main()`: `can_set_mode(can_dev, CAN_MODE_LOOPBACK)` → `can_add_rx_filter_msgq(can_dev, &rx_msgq, &filter)` → `can_start(can_dev)`.
   3. `thread_tx`: Gọi `can_send(can_dev, &frame, K_MSEC(100), NULL, NULL)`.
   4. `thread_rx`: Gọi `k_msgq_get(&rx_msgq, &frame, K_FOREVER)` để đọc dữ liệu an toàn.
 
@@ -388,8 +388,8 @@ lab3_canbus/
 
 * **Mục tiêu:** Khảo sát bộ lọc ID/Mask, cờ mở rộng `CAN_FILTER_IDE` (29-bit), cờ yêu cầu từ xa `CAN_FRAME_RTR` và so sánh Callback ISR vs Message Queue.
 * **Cấu trúc bộ lọc:**
-  * **Bộ lọc A (Standard ID `0x100`, Mask `0x7F0`):** Nhận toàn bộ dải `0x100 $\rightarrow$ 0x10F`. Sử dụng **Callback ISR** (`can_add_rx_filter`), trong ISR gọi `k_msgq_put(&evt_q, ...)` chuyển sang `thread_log_a` $$\rightarrow$$ Đảo trạng thái LED Y0 (PE5).
-  * **Bộ lọc B (Extended ID `0x18FF0001`, Mask `0x1FFFFFFF`, cờ `CAN_FILTER_IDE`):** Nhận chính xác 29 bit. Sử dụng **Message Queue** (`can_add_rx_filter_msgq`) $$\rightarrow$$ Đảo trạng thái LED Y1 (PE6).
+  * **Bộ lọc A (Standard ID `0x100`, Mask `0x7F0`):** Nhận toàn bộ dải `0x100 → 0x10F`. Sử dụng **Callback ISR** (`can_add_rx_filter`), trong ISR gọi `k_msgq_put(&evt_q, ...)` chuyển sang `thread_log_a` → Đảo trạng thái LED Y0 (PE5).
+  * **Bộ lọc B (Extended ID `0x18FF0001`, Mask `0x1FFFFFFF`, cờ `CAN_FILTER_IDE`):** Nhận chính xác 29 bit. Sử dụng **Message Queue** (`can_add_rx_filter_msgq`) → Đảo trạng thái LED Y1 (PE6).
   * **Frame RTR:** Kiểm tra `(frame.flags & CAN_FRAME_RTR)`: Khi nhận được yêu cầu RTR trên `0x100`, node phản hồi ngay một Data Frame chứa dữ liệu.
 
 ---
@@ -413,7 +413,7 @@ lab3_canbus/
 * **Mục tiêu:** Đóng gói (Packet Encoding) và giải mã (Packet Decoding) dữ liệu đa byte vào 1 frame CAN 8 byte theo chuẩn **Big-Endian**; phát hiện mất frame bằng bộ đếm `seq` và đo độ trễ.
 * **Cấu trúc Payload (ID `0x321`, DLC = 8):**
   * Byte 0–1: `seq` (uint16_t, bộ đếm tăng 1 mỗi frame).
-  * Byte 2–3: `temp_x10` (uint16_t, nhiệt độ $\times 10$, tăng dần từ 250 đến 300 rồi quay lại 250).
+  * Byte 2–3: `temp_x10` (uint16_t, nhiệt độ × 10, tăng dần từ 250 đến 300 rồi quay lại 250).
   * Byte 4–7: `t_ms` (uint32_t, mốc thời gian phát `k_uptime_get_32()`).
 * **Hành vi phần cứng:** 
   * LED3 (PE4) đảo trạng thái mỗi khi nhận được 1 frame hợp lệ.
@@ -457,14 +457,14 @@ sequenceDiagram
     frame.data[6] = (uint8_t)(t_ms >> 8);  frame.data[7] = (uint8_t)(t_ms & 0xFF);
     ```
   * Nếu giải mã theo Little-Endian, giá trị `seq = 0x0102` (`data[0]=0x01, data[1]=0x02`) sẽ được tính là:
-    $$\text{Value} = \text{data}[0] \mid (\text{data}[1] \ll 8) = 0x01 \mid 0x0200 = 0x0201 = 513\\,\text{(thập phân)}$$
+    $$\text{Value} = \text{data}[0] \mid (\text{data}[1] \ll 8) = 0x01 \mid 0x0200 = 0x0201 = 513$$
 * **(b) Tính toán thời gian và tải bus:**
   * Thời gian truyền một frame 111 bit ở 500 kbit/s:
-    $$t_{\text{frame}} = \frac{111\\,\text{bit}}{500.000\\,\text{bit/s}} = 0,222\\,\text{ms} = 222\\,\mu\text{s}$$
+    $$t_{\text{frame}} = \frac{111\,\text{bit}}{500.000\,\text{bit/s}} = 0,222\,\text{ms} = 222\,\mu\text{s}$$
   * Bus tải tối đa số frame/giây:
-    $$\text{Max Frame Rate} = \frac{1}{0,000222\\,\text{s}} \approx 4504,5\\,\text{frame/giây}$$
+    $$\text{Max Frame Rate} = \frac{1}{0,000222\,\text{s}} \approx 4504,5\,\text{frame/giây}$$
   * Với chu kỳ 200 ms (tần số 5 frame/s), tải bus chiếm dụng là:
-    $$%\text{Bus Load} = \frac{5}{4504,5} \times 100% \approx 0,111%$$
+    $$\text{Bus Load} = \frac{5}{4504{,}5} \times 100\% \approx 0{,}111\%$$
 * **(c) Vì sao loopback không cần ACK từ node khác?**
   * Vì ở chế độ Loopback, khối điều khiển bxCAN tự ngắt kết nối với transceiver bên ngoài, tự vòng tín hiệu từ chân TX nội bộ sang RX nội bộ và **phần cứng bxCAN tự động sinh bit Dominant vào khe ACK** cho chính frame đó.
 
@@ -475,10 +475,10 @@ sequenceDiagram
 #### 1. Yêu cầu đề bài & Lý thuyết cốt lõi
 * **Mục tiêu:** Thiết kế giao thức Lệnh/Phản hồi (Command/Response); ứng dụng khung yêu cầu từ xa RTR (`CAN_FRAME_RTR`) để truy vấn trạng thái thiết bị mà không tốn tải dữ liệu yêu cầu.
 * **Quy ước giao thức:**
-  * `0x200` (Controller $$\rightarrow$$ Actuator): Lệnh điều khiển `data[0]` = đèn (0: LED3, 1: Y0, 2: Y1), `data[1]` = bật (1) / tắt (0).
-  * `0x201` (Actuator $$\rightarrow$$ Controller): Phản hồi kết quả `data[0]` = đèn, `data[1]` = trạng thái mới, `data[2]` = mã kết quả (0: OK, 1: lỗi đèn không tồn tại).
-  * `0x202 RTR` (Controller $$\rightarrow$$ Actuator): Khung RTR không dữ liệu: *"Báo cáo trạng thái tất cả đèn"*.
-  * `0x202 DATA` (Actuator $$\rightarrow$$ Controller): Khung dữ liệu trả lời RTR: `data[0]` = Bitmap trạng thái (`bit0` = LED3, `bit1` = Y0, `bit2` = Y1).
+  * `0x200` (Controller → Actuator): Lệnh điều khiển `data[0]` = đèn (0: LED3, 1: Y0, 2: Y1), `data[1]` = bật (1) / tắt (0).
+  * `0x201` (Actuator → Controller): Phản hồi kết quả `data[0]` = đèn, `data[1]` = trạng thái mới, `data[2]` = mã kết quả (0: OK, 1: lỗi đèn không tồn tại).
+  * `0x202 RTR` (Controller → Actuator): Khung RTR không dữ liệu: *"Báo cáo trạng thái tất cả đèn"*.
+  * `0x202 DATA` (Actuator → Controller): Khung dữ liệu trả lời RTR: `data[0]` = Bitmap trạng thái (`bit0` = LED3, `bit1` = Y0, `bit2` = Y1).
 * **Cấu hình bắt buộc:** `CONFIG_CAN_ACCEPT_RTR=y` trong `prj.conf`.
 
 #### 2. Hướng dẫn trình tự đọc hiểu mã nguồn
@@ -486,7 +486,7 @@ sequenceDiagram
 2. **Kiểm tra bộ lọc của Actuator:** Đăng ký 2 bộ lọc cho ID `0x200` (lệnh) và `0x202` (RTR).
 3. **Phân biệt RTR trong `thread_actuator`:** Kiểm tra `(frame.flags & CAN_FRAME_RTR)`. Nếu có, đóng gói bitmap `(led3_st | (y0_st << 1) | (y1_st << 2))` vào frame `0x202` Data gửi lại.
 4. **Xử lý loopback trong `thread_controller`:** Khi nhận ID `0x202`, kiểm tra `if (frame.flags & CAN_FRAME_RTR) continue;` để bỏ qua frame RTR do chính mình gửi dội lại.
-5. **Kịch bản kiểm thử lỗi:** Controller gửi lệnh điều khiển đèn số 5 $$\rightarrow$$ Actuator phản hồi mã lỗi `0x01` trên frame `0x201`.
+5. **Kịch bản kiểm thử lỗi:** Controller gửi lệnh điều khiển đèn số 5 → Actuator phản hồi mã lỗi `0x01` trên frame `0x201`.
 
 #### 3. Cơ chế hoạt động & Sơ đồ tương tác
 ```mermaid
@@ -527,10 +527,10 @@ sequenceDiagram
     * **Filter ID:** `0x200`
     * **Filter Mask:** `0x7FE` (`111 1111 1110_2`)
     * *Kiểm chứng:* 
-      * `0x200 & 0x7FE = 0x200 == 0x200` (KHỚP $$\rightarrow$$ NHẬN)
-      * `0x201 & 0x7FE = 0x200 == 0x200` (KHỚP $$\rightarrow$$ NHẬN)
-      * `0x202 & 0x7FE = 0x202 != 0x200` (SAI $$\rightarrow$$ LOẠI)
-      * `0x203 & 0x7FE = 0x202 != 0x200` (SAI $$\rightarrow$$ LOẠI)
+      * `0x200 & 0x7FE = 0x200 == 0x200` (KHỚP → NHẬN)
+      * `0x201 & 0x7FE = 0x200 == 0x200` (KHỚP → NHẬN)
+      * `0x202 & 0x7FE = 0x202 != 0x200` (SAI → LOẠI)
+      * `0x203 & 0x7FE = 0x202 != 0x200` (SAI → LOẠI)
 * **(c) Vì sao không dùng ID 0x000 cho lệnh điều khiển đèn trong hệ thống thật?**
   * Trong mạng CAN, ID `0x000` có giá trị số nhỏ nhất nên mang **độ ưu tiên cao nhất tuyệt đối trên toàn bộ bus**. ID này được bảo lưu cho các thông điệp an toàn khẩn cấp nhất (như lệnh ngắt khẩn cấp E-STOP, cảnh báo va chạm, túi khí, reset mạng). Nếu gán `0x000` cho lệnh điều khiển đèn thông thường, khi có tranh chấp bus nó sẽ chèn ép và trì hoãn các gói tin an toàn sinh mạng khác.
 
@@ -542,12 +542,12 @@ sequenceDiagram
 * **Mục tiêu:** Chứng minh bộ lọc phần cứng (Hardware Acceptance Filter) loại bỏ hoàn toàn frame không mong muốn mà không tốn chu kỳ CPU; quan sát cơ chế phân xử ưu tiên truyền của 3 TX Mailbox của bxCAN.
 * **3 luồng phát định kỳ:**
   * Thread 1: `0x080` mỗi 100 ms.
-  * Thread 2: `0x4A0 $\rightarrow$ 0x4AF` (ID tăng vòng) mỗi 250 ms.
+  * Thread 2: `0x4A0 → 0x4AF` (ID tăng vòng) mỗi 250 ms.
   * Thread 3: `0x6F0` mỗi 1000 ms.
 * **Chỉ sử dụng 2 bộ lọc:**
   * Bộ lọc 1: Nhận chính xác `0x080` (Mask `0x7FF`).
-  * Bộ lọc 2: Nhận toàn bộ dải `0x4A0 $\rightarrow$ 0x4AF` (Filter ID `0x4A0`, Mask `0x7F0`).
-  * Frame `0x6F0` không khớp bộ lọc nào $$\rightarrow$$ Bị loại bỏ 100% tại phần cứng.
+  * Bộ lọc 2: Nhận toàn bộ dải `0x4A0 → 0x4AF` (Filter ID `0x4A0`, Mask `0x7F0`).
+  * Frame `0x6F0` không khớp bộ lọc nào → Bị loại bỏ 100% tại phần cứng.
 * **Thử nghiệm ưu tiên:** Mỗi 5s, gửi liền 3 frame `0x300`, `0x200`, `0x100` bằng `can_send(..., K_NO_WAIT, tx_done_cb, NULL)` không chờ giữa các lần gọi. In thứ tự nhận được tại bên nhận.
 * **Cảnh báo mất gói:** Ngõ ra Y0 (PE5) bật sáng nếu số frame `0x080` nhận được trong cửa sổ 5s nằm ngoài khoảng 48–52.
 
@@ -598,16 +598,16 @@ flowchart TD
 ```
 
 #### 4. Nếu KHÔNG CÓ cơ chế này thì sao? (Failure Modes)
-* **Nếu không lọc bằng phần cứng:** Mọi frame rác (như `0x6F0` hoặc hàng ngàn frame khác trên ô tô) đều kích hoạt ngắt ISR, đánh thức CPU và đẩy vào Message Queue $$\rightarrow$$ Gây nghẽn hàng đợi, tiêu hao năng lượng và trễ các tác vụ thời gian thực.
+* **Nếu không lọc bằng phần cứng:** Mọi frame rác (như `0x6F0` hoặc hàng ngàn frame khác trên ô tô) đều kích hoạt ngắt ISR, đánh thức CPU và đẩy vào Message Queue → Gây nghẽn hàng đợi, tiêu hao năng lượng và trễ các tác vụ thời gian thực.
 * **Nếu không có cơ chế phân xử ưu tiên:** Gói tin phanh khẩn cấp có thể bị xếp sau một gói tin đo áp suất lốp, gây nguy hiểm khôn lường.
 
 #### 5. Đáp án câu hỏi bài tập Bài 3
 * **(a) Cặp ID/Mask cho dải 0x4A0–0x4AF & Chứng minh 0x6F0 và 0x4B0 bị loại:**
-  * Dải `0x4A0 $\rightarrow$ 0x4AF`: **Filter ID = `0x4A0`, Mask = `0x7F0`**.
-  * *Chứng minh loại `0x6F0`:* `0x6F0 & 0x7F0 = 0x6F0 != 0x4A0` $$\rightarrow$$ Không khớp $$\rightarrow$$ Phần cứng loại bỏ.
-  * *Chứng minh loại `0x4B0`:* `0x4B0 & 0x7F0 = 0x4B0 != 0x4A0` $$\rightarrow$$ Không khớp $$\rightarrow$$ Phần cứng loại bỏ.
+  * Dải `0x4A0 → 0x4AF`: **Filter ID = `0x4A0`, Mask = `0x7F0`**.
+  * *Chứng minh loại `0x6F0`:* `0x6F0 & 0x7F0 = 0x6F0 != 0x4A0` → Không khớp → Phần cứng loại bỏ.
+  * *Chứng minh loại `0x4B0`:* `0x4B0 & 0x7F0 = 0x4B0 != 0x4A0` → Không khớp → Phần cứng loại bỏ.
 * **(b) Thứ tự nhận 3 frame trong thử nghiệm ưu tiên & Giải thích cơ chế 3 Mailbox:**
-  * Thứ tự nhận được: **`0x100` $$\rightarrow$$ `0x200` $$\rightarrow$$ `0x300`** (hoặc `0x300` $$\rightarrow$$ `0x100` $$\rightarrow$$ `0x200`).
+  * Thứ tự nhận được: **`0x100` → `0x200` → `0x300`** (hoặc `0x300` → `0x100` → `0x200`).
   * *Giải thích cơ chế 3 TX Mailbox:* bxCAN có 3 hộp thư phát. Khi cả 3 mailbox đều chứa frame chờ phát, phần cứng so sánh trường ID của 3 mailbox và tự động đẩy mailbox có **ID nhỏ nhất ra bus trước** (`0x100` thắng `0x200` và `0x300`).
   * *Vì sao frame đầu tiên có thể là `0x300`?* Vì hàm `can_send` được CPU gọi tuần tự trong mã C. Nếu tại thời điểm gọi `can_send(0x300)`, đường bus đang hoàn toàn rảnh, phần cứng bxCAN có thể kích hoạt phát frame `0x300` ra dây ngay lập tức trước khi CPU kịp thực thi hai lệnh tiếp theo để nạp `0x200` và `0x100` vào mailbox 1 và 2. Khi đó `0x300` đã đang truyền, hai frame còn lại sẽ được phân xử nội bộ: `0x100` đi trước rồi đến `0x200`.
 * **(c) Lợi ích của lọc bằng phần cứng so với lọc bằng if trong phần mềm:**
@@ -623,8 +623,8 @@ flowchart TD
 * **Cấu hình:** Cùng 1 mã nguồn nạp cho 2 kit, cấu hình bằng `#define NODE_ID 1` (Kit A) và `#define NODE_ID 2` (Kit B). Chạy `CAN_MODE_NORMAL`, gạt `SW13 = ON`, đấu dây `CANH`, `CANL` và `GND`.
 * **Cơ chế hoạt động:**
   * **Heartbeat & Watchdog:** Mỗi 1s gửi gói Heartbeat `0x700 + NODE_ID` chứa `[NODE_ID, seq, can_state]`. Khi nhận được heartbeat của đối tác, gọi `k_sem_give(&partner_sem)` và đảo trạng thái ngõ ra `Y0` (PE5).
-  * **Watchdog Thread:** Chờ `k_sem_take(&partner_sem, K_SECONDS(3))`: Nếu quá 3s không nhận được $$\rightarrow$$ In `[PARTNER LOST]` và bật LED3 (PE4); khi có lại $$\rightarrow$$ In `[PARTNER BACK]` và tắt LED3.
-  * **Ping-Pong đo RTT:** Mỗi 5s, node gửi PING `0x600 + NODE_ID` chứa timestamp `k_uptime_get_32()`. Node đối tác nhận được lập tức trả PONG `0x680 + NODE_ID_người_ping` mang nguyên vẹn 4 byte đó. Người ping nhận PONG và tính: $\text{RTT} = k_uptime_get_32() - t_{\text{ms}}$.
+  * **Watchdog Thread:** Chờ `k_sem_take(&partner_sem, K_SECONDS(3))`: Nếu quá 3s không nhận được → In `[PARTNER LOST]` và bật LED3 (PE4); khi có lại → In `[PARTNER BACK]` và tắt LED3.
+  * **Ping-Pong đo RTT:** Mỗi 5s, node gửi PING `0x600 + NODE_ID` chứa timestamp `k_uptime_get_32()`. Node đối tác nhận được lập tức trả PONG `0x680 + NODE_ID_người_ping` mang nguyên vẹn 4 byte đó. Người ping nhận PONG và tính: `RTT = k_uptime_get_32() - t_ms`.
   * **Giám sát trạng thái vật lý bus:** Đăng ký `can_set_state_change_callback()` ghi log chuyển trạng thái và giá trị TEC/REC.
   * **Thực nghiệm:** (1) Rút dây CANH trong ~10s rồi cắm lại; (2) Tắt nguồn Kit B trong ~10s rồi bật lại.
 
@@ -674,25 +674,24 @@ sequenceDiagram
 ```
 
 #### 4. Nếu KHÔNG CÓ cơ chế này thì sao? (Failure Modes)
-* **Nếu gọi `can_send` đồng bộ (không có callback và timeout):** Khi rút dây CANH, không có node nào ACK $
-ightarrow$ hàm `can_send` sẽ block vĩnh viễn, thread bị treo cứng, toàn bộ hệ thống tê liệt.
+* **Nếu gọi `can_send` đồng bộ (không có callback và timeout):** Khi rút dây CANH, không có node nào ACK → hàm `can_send` sẽ block vĩnh viễn, thread bị treo cứng, toàn bộ hệ thống tê liệt.
 * **Nếu không có cơ chế Heartbeat/Watchdog:** Một node bị chết nguồn hoặc đứt cáp sẽ không thể bị phát hiện, các node khác vẫn tiếp tục hoạt động trong mù quáng, gây mất an toàn hệ thống phân tán.
 
 #### 5. Đáp án câu hỏi bài tập Bài 4
 * **(a) RTT đo được là bao nhiêu? Phần lớn thời gian nằm ở đâu? Tính thời gian lý thuyết:**
-  * RTT đo được thực tế trên kit dao động từ **$1\\,\text{ms}$ đến $3\\,\text{ms}$**.
+  * RTT đo được thực tế trên kit dao động từ **1 ms đến 3 ms**.
   * *Thời gian truyền lý thuyết của 2 frame 4 byte (khoảng 79 bit mỗi frame):*
-    $$t_{\text{phy}} = 2 \times \frac{79\\,\text{bit}}{500.000\\,\text{bit/s}} = 2 \times 0,158\\,\text{ms} = 0,316\\,\text{ms} = 316\\,\mu\text{s}$$
+    $$t_{\text{phy}} = 2 \times \frac{79\,\text{bit}}{500.000\,\text{bit/s}} = 2 \times 0,158\,\text{ms} = 0,316\,\text{ms} = 316\,\mu\text{s}$$
   * *Phần lớn thời gian nằm ở đâu?* Thời gian lan truyền sóng trên dây đồng chỉ mất vài nano-giây. Phần lớn thời gian nằm ở **độ trễ phần mềm (Software Overhead)**: thời gian thực thi ngắt ISR, thời gian sao chép dữ liệu qua Message Queue và đặc biệt là **chu kỳ lập lịch (Thread Context Switch)** của Zephyr RTOS giữa các luồng.
 * **(b) Khi rút dây CANH, Kit A đi qua những trạng thái nào? Vì sao không vào BUS-OFF?**
-  * Khi rút dây CANH, Kit A gửi frame nhưng không nhận được ACK từ Kit B $$\rightarrow$$ Lỗi ACK Error liên tục.
-  * Bộ đếm lỗi phát TEC tăng mỗi lần $+8$: $0 $\rightarrow$ 8 $\rightarrow$ 16 $\rightarrow$ \dots $\rightarrow$ 128$.
-  * Kit A chuyển dịch trạng thái: **ERROR-ACTIVE** $$\rightarrow$$ **ERROR-WARNING** (khi TEC $\ge 96$) $$\rightarrow$$ **ERROR-PASSIVE** (khi TEC $> 127$).
+  * Khi rút dây CANH, Kit A gửi frame nhưng không nhận được ACK từ Kit B → Lỗi ACK Error liên tục.
+  * Bộ đếm lỗi phát TEC tăng mỗi lần +8: 0 → 8 → 16 → ... → 128.
+  * Kit A chuyển dịch trạng thái: **ERROR-ACTIVE** → **ERROR-WARNING** (khi TEC ≥ 96) → **ERROR-PASSIVE** (khi TEC > 127).
   * *Vì sao không vào BUS-OFF?* Theo chuẩn CAN ISO 11898: **Khi một node đã ở trạng thái Error-Passive, lỗi thiếu ACK (No ACK) sẽ KHÔNG làm tăng TEC nữa**. Điều này nhằm ngăn ngừa một node khỏe mạnh tự ngắt khỏi bus (Bus-Off) chỉ vì đối tác bị ngắt kết nối.
 * **(c) Nếu cả 2 kit cùng đặt `NODE_ID = 1`, điều gì xảy ra trên bus?**
   * Cả hai kit sẽ cùng phát các frame có ID giống hệt nhau (`0x701` hoặc `0x601`).
   * Trong giai đoạn phân xử Arbitration Field, vì ID giống hệt nhau từng bit nên không node nào thua phân xử.
-  * Đến trường Data Field: Do `seq` hoặc timestamp `t_ms` của hai kit là khác nhau, khi một kit phát bit `1` (Recessive) mà kit kia phát bit `0` (Dominant), kit phát bit `1` đọc lại thấy bit `0` sẽ phát hiện **Bit Error** $$\rightarrow$$ Lập tức phát Error Flag làm hỏng frame. Cả hai kit liên tục đụng độ lỗi và đẩy TEC lên cao.
+  * Đến trường Data Field: Do `seq` hoặc timestamp `t_ms` của hai kit là khác nhau, khi một kit phát bit `1` (Recessive) mà kit kia phát bit `0` (Dominant), kit phát bit `1` đọc lại thấy bit `0` sẽ phát hiện **Bit Error** → Lập tức phát Error Flag làm hỏng frame. Cả hai kit liên tục đụng độ lỗi và đẩy TEC lên cao.
 
 ---
 
@@ -701,17 +700,17 @@ ightarrow$ hàm `can_send` sẽ block vĩnh viễn, thread bị treo cứng, to�
 #### 1. Yêu cầu đề bài & Lý thuyết cốt lõi
 * **Mục tiêu:** Xây dựng hệ thống nhúng phân tán hoàn chỉnh gồm 2 node trên bus CAN: Điều khiển tập trung (Kit A), hiển thị hiện trường (Kit B), có tương tác xin đường và cơ chế bảo an Fail-Safe khi mất liên lạc.
 * **Kiến trúc phân tán:**
-  * **Kit A (Controller - Bộ điều khiển):** Chạy máy trạng thái FSM (ĐỎ 7s $$\rightarrow$$ XANH 5s $$\rightarrow$$ VÀNG 2s; XANH tối thiểu 2s, rút ngắn khi có người đi bộ xin qua đường). Kit A không điều khiển đèn trực tiếp mà gửi broadcast mỗi **500 ms VÀ mỗi khi đổi pha** frame `0x100`: `data[0] = pha` (0: Đỏ, 1: Xanh, 2: Vàng), `data[1] = giây còn lại`, `data[2] = seq`.
+  * **Kit A (Controller - Bộ điều khiển):** Chạy máy trạng thái FSM (ĐỎ 7s → XANH 5s → VÀNG 2s; XANH tối thiểu 2s, rút ngắn khi có người đi bộ xin qua đường). Kit A không điều khiển đèn trực tiếp mà gửi broadcast mỗi **500 ms VÀ mỗi khi đổi pha** frame `0x100`: `data[0] = pha` (0: Đỏ, 1: Xanh, 2: Vàng), `data[1] = giây còn lại`, `data[2] = seq`.
   * **Kit B (Display - Bộ hiển thị):** Nhận frame `0x100`, trực tiếp điều khiển ngõ ra công suất: `Y0` (Đỏ), `Y1` (Xanh), cả hai cùng bật là Vàng.
   * **Nút bấm xin qua đường (Kit B):** Giả lập định kỳ (one-shot timer ở giây thứ 10, 14, 8, 17...) gửi frame yêu cầu `0x110`. Kit A nhận được, nếu đang ở pha Xanh thì chấp nhận và phản hồi `0x111` (`[req_seq, 1:chấp nhận / 0:từ chối]`).
-  * **Cơ chế Bảo an Fail-Safe (Kit B):** Nếu **quá 2 giây** không nhận được frame `0x100` từ Kit A $$\rightarrow$$ Chuyển sang chế độ **VÀNG NHẤP NHÁY** (Y0 và Y1 cùng chớp nháy 500ms ON / 500ms OFF) và in cảnh báo `[FAIL-SAFE]`. Tự động phục hồi ngay khi nhận lại được `0x100`.
+  * **Cơ chế Bảo an Fail-Safe (Kit B):** Nếu **quá 2 giây** không nhận được frame `0x100` từ Kit A → Chuyển sang chế độ **VÀNG NHẤP NHÁY** (Y0 và Y1 cùng chớp nháy 500ms ON / 500ms OFF) và in cảnh báo `[FAIL-SAFE]`. Tự động phục hồi ngay khi nhận lại được `0x100`.
   * Cả hai kit: LED3 nháy 1s heartbeat, giám sát trạng thái bus, logger thread tập trung. Hỗ trợ `DUAL_ROLE_LOOPBACK` để chạy kiểm thử trên 1 kit nếu thiếu thiết bị.
 
 #### 2. Hướng dẫn trình tự đọc hiểu mã nguồn
 1. **Kiểm tra cấu hình vai trò:** `#define NODE_ROLE ROLE_KIT_A` hoặc `ROLE_KIT_B`. (Hỗ trợ `#define DUAL_ROLE_LOOPBACK 1` để test 1 kit).
 2. **Kiểm tra FSM trên Kit A (`thread_controller`):** Quản lý đếm giây, rút ngắn pha XANH khi nhận được cờ `ped_req_flag`.
 3. **Kiểm tra cơ chế phát broadcast:** Kit A gửi `0x100` mỗi 500 ms và ngay lập tức khi chuyển pha.
-4. **Kiểm tra cơ chế Fail-Safe trên Kit B (`thread_display`):** Gọi `k_msgq_get(&traffic_rx_msgq, &frame, K_MSEC(100))` và đếm thời gian trôi qua. Nếu quá 2000 ms không có frame $$\rightarrow$$ Gọi `set_hardware_lights(LIGHT_BLINK_YELLOW)`.
+4. **Kiểm tra cơ chế Fail-Safe trên Kit B (`thread_display`):** Gọi `k_msgq_get(&traffic_rx_msgq, &frame, K_MSEC(100))` và đếm thời gian trôi qua. Nếu quá 2000 ms không có frame → Gọi `set_hardware_lights(LIGHT_BLINK_YELLOW)`.
 5. **Kiểm tra logic xin qua đường:** Timer kích hoạt gửi `0x110`, Kit A tiếp nhận và trả lời `0x111`.
 
 #### 3. Cơ chế hoạt động & Sơ đồ tương tác
@@ -760,11 +759,11 @@ sequenceDiagram
   * Có bị trễ! Vì `0x050 < 0x100`, theo nguyên tắc phân xử của CAN, frame `0x050` có độ ưu tiên cao hơn và sẽ giành quyền chiếm bus trước frame `0x100`. Nếu node đó phát frame liên tục với mật độ dày đặc, frame điều khiển đèn `0x100` sẽ bị trì hoãn và không thể phát đúng chu kỳ.
   * *Giải pháp:* Để lệnh điều khiển đèn luôn được ưu tiên tuyệt đối, ta phải gán ID cho frame điều khiển đèn nhỏ hơn `0x050`, ví dụ như chọn ID trong dải `0x010` – `0x04F`.
 * **(c) Rút dây CANH khi đèn đang Xanh: Mô tả diễn biến theo thời gian:**
-  1. **$t = 0\\,\text{s}$:** Rút dây CANH. Tín hiệu vi sai bị ngắt.
-  2. **$t = 500\\,\text{ms}$:** Kit A gửi frame `0x100` nhưng không thấy bit ACK $$\rightarrow$$ Báo lỗi truyền, bộ đếm TEC tăng dần và chuyển sang `ERROR-PASSIVE`.
+  1. **t = 0s:** Rút dây CANH. Tín hiệu vi sai bị ngắt.
+  2. **t = 500 ms:** Kit A gửi frame `0x100` nhưng không thấy bit ACK → Báo lỗi truyền, bộ đếm TEC tăng dần và chuyển sang `ERROR-PASSIVE`.
   3. **Tại Kit B:** Không nhận được frame `0x100` nào. Bộ đếm thời gian giám sát không được nạp lại.
-  4. **$t = 2.0\\,\text{s}$:** Bộ đếm timeout 2s trên Kit B hết hạn $$\rightarrow$$ Kit B kích hoạt chế độ **FAIL-SAFE**: ngắt đèn Xanh, chuyển sang chớp nháy đồng thời cả Y0 và Y1 chu kỳ 500ms ON / 500ms OFF (đèn Vàng cảnh báo ngã tư) và in dòng log `[FAIL-SAFE: Connection Lost]`.
-  5. **Khi cắm lại dây:** Frame `0x100` được Kit B nhận thành công $$\rightarrow$$ Kit B lập tức thoát Fail-Safe và đồng bộ ngay về đúng màu đèn cùng số giây thực tế mà Kit A đang chạy.
+  4. **t = 2.0s:** Bộ đếm timeout 2s trên Kit B hết hạn → Kit B kích hoạt chế độ **FAIL-SAFE**: ngắt đèn Xanh, chuyển sang chớp nháy đồng thời cả Y0 và Y1 chu kỳ 500ms ON / 500ms OFF (đèn Vàng cảnh báo ngã tư) và in dòng log `[FAIL-SAFE: Connection Lost]`.
+  5. **Khi cắm lại dây:** Frame `0x100` được Kit B nhận thành công → Kit B lập tức thoát Fail-Safe và đồng bộ ngay về đúng màu đèn cùng số giây thực tế mà Kit A đang chạy.
 
 ---
 
@@ -793,7 +792,7 @@ Sử dụng dây dẫn có đầu cosse hoặc dây đực-đực cắm vào c�
 1. Nối cọc **CAN_H** của Kit A với cọc **CAN_H** của Kit B.
 2. Nối cọc **CAN_L** của Kit A với cọc **CAN_L** của Kit B.
 3. Nối cọc **GND** của Kit A với cọc **GND** của Kit B (Bắt buộc để ổn định điện thế chung).
-4. Gạt công tắc **SW13** trên cả 2 kit sang vị trí **ON** để đóng điện trở kết cuối $120\\,\Omega$.
+4. Gạt công tắc **SW13** trên cả 2 kit sang vị trí **ON** để đóng điện trở kết cuối 120 Ω.
 
 ---
 
@@ -820,6 +819,6 @@ Sử dụng dây dẫn có đầu cosse hoặc dây đực-đực cắm vào c�
 
 ### 2. Các bẫy kỹ thuật thường gặp khi thực hành
 1. **Quên gọi `can_set_mode()` trước `can_start()`:** Hàm `can_set_mode()` chỉ có hiệu lực khi bộ điều khiển CAN đang ở trạng thái Dừng (Stopped). Nếu gọi sau `can_start()` hàm sẽ trả về mã lỗi `-EBUSY`.
-2. **Không gạt công tắc `SW13 = ON` trên bus thật:** Khi thiếu điện trở kết cuối $120\\,\Omega$, ở tốc độ cao $500\\,\text{kbps}$ sóng phản xạ sẽ làm biến dạng các bit $$\rightarrow$$ Bộ thu liên tục báo lỗi CRC hoặc Stuff Error.
-3. **Quên nối GND chung giữa 2 kit:** Dẫn đến điện áp common-mode vượt ngưỡng cho phép của transceiver TJA1050 $$\rightarrow$$ Hai kit không thể đọc được bit của nhau.
+2. **Không gạt công tắc `SW13 = ON` trên bus thật:** Khi thiếu điện trở kết cuối 120 Ω, ở tốc độ cao 500 kbps sóng phản xạ sẽ làm biến dạng các bit → Bộ thu liên tục báo lỗi CRC hoặc Stuff Error.
+3. **Quên nối GND chung giữa 2 kit:** Dẫn đến điện áp common-mode vượt ngưỡng cho phép của transceiver TJA1050 → Hai kit không thể đọc được bit của nhau.
 4. **Dùng `can_send` đồng bộ (không có callback và timeout) trên bus thật:** Khi đối tác bị tắt nguồn hoặc mất dây, lệnh gửi sẽ bị block vĩnh viễn và làm tê liệt toàn bộ hệ thống. Luôn dùng callback bất đồng bộ và kèm timeout!

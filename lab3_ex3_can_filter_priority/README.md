@@ -10,12 +10,12 @@ Tài liệu hướng dẫn chi tiết về **Lý thuyết cốt lõi**, **Trình
 * **Môi trường thực thi:** Chế độ Loopback trên 1 kit BKIT ARM4.
 * **3 luồng phát định kỳ:**
   * Thread 1: Phát frame ID `0x080` mỗi **100 ms** (10 frame/s).
-  * Thread 2: Phát frame ID tăng vòng trong dải `0x4A0 $\rightarrow$ 0x4AF` mỗi **250 ms** (4 frame/s).
+  * Thread 2: Phát frame ID tăng vòng trong dải `0x4A0 → 0x4AF` mỗi **250 ms** (4 frame/s).
   * Thread 3: Phát frame ID `0x6F0` mỗi **1000 ms** (1 frame/s).
 * **Cấu hình bộ lọc phần cứng (Chỉ dùng đúng 2 bộ lọc):**
   * Bộ lọc 1: Nhận chính xác ID `0x080` (Mask `0x7FF`).
-  * Bộ lọc 2: Nhận toàn bộ dải `0x4A0 $\rightarrow$ 0x4AF` bằng Mask.
-  * Frame `0x6F0` không khớp bộ lọc nào $$\rightarrow$$ **Bị phần cứng loại bỏ 100%**, không bao giờ xuất hiện trong thống kê.
+  * Bộ lọc 2: Nhận toàn bộ dải `0x4A0 → 0x4AF` bằng Mask.
+  * Frame `0x6F0` không khớp bộ lọc nào → **Bị phần cứng loại bỏ 100%**, không bao giờ xuất hiện trong thống kê.
 * **Thử nghiệm ưu tiên truyền (Priority Burst Test):**
   * Mỗi **5 giây**, một thread gửi liền 3 frame có ID `0x300`, `0x200`, `0x100` bằng `can_send(..., K_NO_WAIT, tx_done_cb, NULL)` không chờ giữa các lần gọi.
   * Bộ lọc riêng đưa vào `priority_rx_msgq`. In thứ tự nhận được ra màn hình.
@@ -24,7 +24,7 @@ Tài liệu hướng dẫn chi tiết về **Lý thuyết cốt lõi**, **Trình
 ### 1.2. Khái niệm & Cơ chế áp dụng
 * **Mặt nạ lọc dải (Bit Mask Filtering):**
   * Dải `0x4A0` (`0100 1010 0000_2`) đến `0x4AF` (`0100 1010 1111_2`) có 7 bit cao cố định là `0100 101_2` (`0x4A`), 4 bit thấp biến thiên từ 0 đến 15.
-  * Mặt nạ Mask $= 0x7F0$ (`111 1111 0000_2`) kiểm tra 7 bit cao và bỏ qua 4 bit thấp $$\rightarrow$$ Chấp nhận toàn bộ 16 ID trong dải.
+  * Mặt nạ Mask = 0x7F0 (`111 1111 0000_2`) kiểm tra 7 bit cao và bỏ qua 4 bit thấp → Chấp nhận toàn bộ 16 ID trong dải.
 * **Cơ chế 3 Hộp thư phát (TX Mailbox 0, 1, 2) của bxCAN:**
   * Khi nhiều mailbox đồng thời sẵn sàng phát, phần cứng bxCAN thực hiện phân xử nội bộ: **Hộp thư chứa frame có ID nhỏ hơn sẽ được ưu tiên phát ra bus trước!**
 
@@ -132,12 +132,12 @@ flowchart TD
 
 | Thời điểm | Luồng phát | Hành động & ID | Thứ tự nhận tại `priority_rx_msgq` |
 | :---: | :--- | :--- | :---: |
-| **$5000\\,\text{ms}$** | `thread_priority_tx` | Nạp `0x300` vào Mailbox 0 | — |
-| **$5000\\,\text{ms}$** | `thread_priority_tx` | Nạp `0x200` vào Mailbox 1 | — |
-| **$5000\\,\text{ms}$** | `thread_priority_tx` | Nạp `0x100` vào Mailbox 2 | — |
-| **$5001\\,\text{ms}$** | Phần cứng bxCAN | Phân xử: `0x100 < 0x200 < 0x300` | **Nhận Frame 0x100 đầu tiên** |
-| **$5002\\,\text{ms}$** | Phần cứng bxCAN | Phát tiếp `0x200` | **Nhận Frame 0x200 thứ hai** |
-| **$5003\\,\text{ms}$** | Phần cứng bxCAN | Phát cuối cùng `0x300` | **Nhận Frame 0x300 thứ ba** |
+| **5000 ms** | `thread_priority_tx` | Nạp `0x300` vào Mailbox 0 | — |
+| **5000 ms** | `thread_priority_tx` | Nạp `0x200` vào Mailbox 1 | — |
+| **5000 ms** | `thread_priority_tx` | Nạp `0x100` vào Mailbox 2 | — |
+| **5001 ms** | Phần cứng bxCAN | Phân xử: `0x100 < 0x200 < 0x300` | **Nhận Frame 0x100 đầu tiên** |
+| **5002 ms** | Phần cứng bxCAN | Phát tiếp `0x200` | **Nhận Frame 0x200 thứ hai** |
+| **5003 ms** | Phần cứng bxCAN | Phát cuối cùng `0x300` | **Nhận Frame 0x300 thứ ba** |
 
 ---
 
@@ -153,14 +153,18 @@ flowchart TD
 ## 5. Đáp án câu hỏi bài tập (Q&A)
 
 ### ❓ Câu (a): Bạn dùng ID/mask nào cho dải 0x4A0–0x4AF? Chứng minh 0x6F0 và 0x4B0 bị loại.
-* **Cặp ID/Mask cho dải `0x4A0 $\rightarrow$ 0x4AF`:** **Filter ID = `0x4A0`, Mask = `0x7F0`**.
+* **Cặp ID/Mask cho dải `0x4A0 → 0x4AF`:** **Filter ID = `0x4A0`, Mask = `0x7F0`**.
 * **Chứng minh `0x6F0` bị loại:**
-  $$\text{Received_ID} \\ & \\ \text{Mask} = 0x6F0 \\ & \\ 0x7F0 = 0x6F0 \neq 0x4A0 $\rightarrow$ \text{BỊ PHẦN CỨNG LOẠI BỎ}$$
+  ```text
+Received_ID & Mask = 0x6F0 & 0x7F0 = 0x6F0 != 0x4A0  --> BỊ PHẦN CỨNG LOẠI BỎ NGAY LẬP TỨC
+```
 * **Chứng minh `0x4B0` bị loại:**
-  $$\text{Received_ID} \\ & \\ \text{Mask} = 0x4B0 \\ & \\ 0x7F0 = 0x4B0 \neq 0x4A0 $\rightarrow$ \text{BỊ PHẦN CỨNG LOẠI BỎ}$$
+  ```text
+Received_ID & Mask = 0x4B0 & 0x7F0 = 0x4B0 != 0x4A0  --> BỊ PHẦN CỨNG LOẠI BỎ NGAY LẬP TỨC
+```
 
 ### ❓ Câu (b): Thứ tự nhận ba frame của thử nghiệm ưu tiên là gì? Giải thích bằng cơ chế ba hộp thư TX của bxCAN và quy tắc "ID nhỏ hơn được ưu tiên". Vì sao frame đầu tiên có thể không phải là 0x100?
-* **Thứ tự nhận được:** **`0x100` $$\rightarrow$$ `0x200` $$\rightarrow$$ `0x300`** (hoặc `0x300` $$\rightarrow$$ `0x100` $$\rightarrow$$ `0x200`).
+* **Thứ tự nhận được:** **`0x100` → `0x200` → `0x300`** (hoặc `0x300` → `0x100` → `0x200`).
 * **Giải thích:** bxCAN trên STM32 có 3 hộp thư truyền (TX Mailbox 0, 1, 2). Khi cả 3 mailbox đều đang chờ phát, bộ điều khiển phần cứng so sánh trường ID của 3 frame và tự động phát frame có **ID nhỏ nhất ra bus trước** (`0x100` ưu tiên hơn `0x200`, `0x200` ưu tiên hơn `0x300`).
 * **Vì sao frame đầu tiên có thể là `0x300`?** Vì hàm `can_send` được CPU gọi tuần tự trong mã C. Nếu tại thời điểm gọi `can_send(0x300)`, đường bus đang hoàn toàn rảnh rỗi, phần cứng bxCAN có thể kích hoạt phát frame `0x300` ngay lập tức trước khi CPU kịp thực thi hai lệnh nạp `0x200` và `0x100` vào mailbox 1 và 2. Khi đó `0x300` đã đang truyền, hai frame còn lại sẽ được phân xử nội bộ: `0x100` đi trước rồi đến `0x200`.
 

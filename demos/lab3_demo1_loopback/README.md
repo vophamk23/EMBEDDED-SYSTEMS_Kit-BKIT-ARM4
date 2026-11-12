@@ -137,7 +137,7 @@ sequenceDiagram
 
 | Tiêu chí | Khi KHÔNG CÓ Loopback Mode | Khi CÓ Loopback Mode (Demo 1) |
 | :--- | :--- | :--- |
-| **Yêu cầu thiết bị** | Bắt buộc phải có **ít nhất 2 kit**, nối dây `CANH`, `CANL`, `GND` và trở $120\,\Omega$. | **Chỉ cần 1 kit duy nhất**, không cần cắm bất kỳ dây nào. |
+| **Yêu cầu thiết bị** | Bắt buộc phải có **ít nhất 2 kit**, nối dây `CANH`, `CANL`, `GND` và trở 120 Ω. | **Chỉ cần 1 kit duy nhất**, không cần cắm bất kỳ dây nào. |
 | **Khi test một mình** | Gửi frame sẽ bị lỗi **No ACK** liên tục, bộ đếm lỗi TEC tăng vọt lên 128 (Error-Passive). | bxCAN tự động sinh bit ACK nội bộ, gửi nhận thành công 100%. |
 | **Cô lập lỗi phần mềm** | Khó biết lỗi do code phần mềm hay do tiếp xúc dây lỏng, thiếu trở kết cuối. | Chắc chắn 100% kiểm chứng được logic thuật toán và bộ lọc. |
 

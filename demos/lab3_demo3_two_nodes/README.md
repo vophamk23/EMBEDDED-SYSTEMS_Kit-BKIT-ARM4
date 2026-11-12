@@ -7,11 +7,11 @@ Tài liệu hướng dẫn chi tiết về kỹ thuật kết nối **Bus CAN v�
 ## 1. Kỹ thuật & Khái niệm cốt lõi
 
 ### 1.1. Giao tiếp trên Bus thật & Cơ chế bảo vệ đường truyền
-* **Kết nối vật lý:** Nối `CAN_H` với `CAN_H`, `CAN_L` với `CAN_L`, nối chung `GND` và gạt công tắc `SW13 = ON` trên cả 2 kit để đóng trở kết cuối $120\\,\Omega$.
+* **Kết nối vật lý:** Nối `CAN_H` với `CAN_H`, `CAN_L` với `CAN_L`, nối chung `GND` và gạt công tắc `SW13 = ON` trên cả 2 kit để đóng trở kết cuối 120 Ω.
 * **Heartbeat & Watchdog:** Mỗi node phát định kỳ gói Heartbeat `0x700 + NODE_ID` mỗi 1 giây. Node đối tác dùng Semaphore kèm Timeout 3 giây (`k_sem_take(&partner_sem, K_SECONDS(3))`) để phát hiện đứt cáp hoặc mất nguồn đối tác.
 * **Quy tắc vàng khi gửi trên Bus thật:**
   * **TUYỆT ĐỐI KHÔNG DÙNG** `can_send(..., K_FOREVER, NULL, NULL)`.
-  * Vì nếu bus đứt hoặc node kia tắt nguồn, không có ai gửi ACK $$\rightarrow$$ hàm gửi sẽ **treo cứng luồng vĩnh viễn**!
+  * Vì nếu bus đứt hoặc node kia tắt nguồn, không có ai gửi ACK → hàm gửi sẽ **treo cứng luồng vĩnh viễn**!
   * **Bắt buộc:** Dùng `can_send(..., K_MSEC(100), tx_done_cb, NULL)` với timeout ngắn và callback bất đồng bộ.
 * **Giám sát trạng thái Bus (CAN State Machine):**
   * `can_set_state_change_callback()`: Đăng ký callback theo dõi 4 trạng thái lỗi: `ERROR-ACTIVE`, `ERROR-WARNING`, `ERROR-PASSIVE`, `BUS-OFF` cùng hai bộ đếm lỗi `TEC` và `REC`.

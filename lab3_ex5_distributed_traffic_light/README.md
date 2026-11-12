@@ -10,7 +10,7 @@ Tài liệu hướng dẫn chi tiết về **Lý thuyết cốt lõi**, **Trình
 * **Môi trường thực thi:** Mạng CAN 2 kit nối thành bus thật (hỗ trợ `DUAL_ROLE_LOOPBACK` để test 1 kit).
 * **Kiến trúc phân tán Master - Slave:**
   * **Kit A (Controller - Master):**
-    * Chạy máy trạng thái FSM đèn giao thông: **ĐỎ (7s) $$\rightarrow$$ XANH (5s) $$\rightarrow$$ VÀNG (2s)**.
+    * Chạy máy trạng thái FSM đèn giao thông: **ĐỎ (7s) → XANH (5s) → VÀNG (2s)**.
     * Pha XANH có thời gian tối thiểu **2 giây**; rút ngắn xuống 1 giây nếu có người đi bộ xin qua đường.
     * Kit A không tự điều khiển đèn trên kit mình mà broadcast định kỳ mỗi **500 ms VÀ mỗi khi đổi pha** frame `0x100`: `data[0] = pha` (0: Đỏ, 1: Xanh, 2: Vàng), `data[1] = giây còn lại`, `data[2] = seq`.
   * **Kit B (Display - Slave):**
@@ -21,10 +21,10 @@ Tài liệu hướng dẫn chi tiết về **Lý thuyết cốt lõi**, **Trình
     * In pha và số giây còn lại ra Serial Monitor.
 * **Tương tác xin qua đường từ xa (Pedestrian Request):**
   * Nút bấm người đi bộ ở Kit B được mô phỏng định kỳ (lần đầu ở giây 10, sau đó 14s, 8s, 17s...) gửi frame yêu cầu `0x110` (`data[0] = req_seq`).
-  * Kit A tiếp nhận: Nếu đang ở pha Xanh (và đã chạy $\ge 2\\,\text{s}$) $$\rightarrow$$ Chấp nhận rút ngắn Xanh; nếu đang Đỏ hoặc Vàng $$\rightarrow$$ Bỏ qua.
+  * Kit A tiếp nhận: Nếu đang ở pha Xanh (và đã chạy ≥ 2s) → Chấp nhận rút ngắn Xanh; nếu đang Đỏ hoặc Vàng → Bỏ qua.
   * Kit A phản hồi frame `0x111`: `data[0] = req_seq`, `data[1] = 1 (chấp nhận) / 0 (bỏ qua)`. Kit B in kết quả.
 * **Cơ chế Bảo an Fail-Safe (Kit B):**
-  * Nếu **quá 2 giây** không nhận được frame `0x100` từ Kit A $$\rightarrow$$ Chuyển sang chế độ **VÀNG NHẤP NHÁY** (`Y0` và `Y1` cùng nháy chu kỳ 500ms ON / 500ms OFF) và in cảnh báo `[FAIL-SAFE]`.
+  * Nếu **quá 2 giây** không nhận được frame `0x100` từ Kit A → Chuyển sang chế độ **VÀNG NHẤP NHÁY** (`Y0` và `Y1` cùng nháy chu kỳ 500ms ON / 500ms OFF) và in cảnh báo `[FAIL-SAFE]`.
   * Tự động phục hồi ngay khi nhận lại được frame `0x100`.
 * **Heartbeat:** Cả hai kit nhấp nháy đèn **LED3 (PE4)** mỗi giây 1 lần làm nhịp tim.
 
@@ -63,7 +63,7 @@ Tài liệu hướng dẫn chi tiết về **Lý thuyết cốt lõi**, **Trình
 ```
 
 ### 🔹 Bước 2: Quan sát FSM Đèn giao thông trên Kit A (`thread_traffic_fsm`)
-Quản lý chu kỳ ĐỎ (7s) $$\rightarrow$$ XANH (5s) $$\rightarrow$$ VÀNG (2s) và rút ngắn Xanh khi có yêu cầu:
+Quản lý chu kỳ ĐỎ (7s) → XANH (5s) → VÀNG (2s) và rút ngắn Xanh khi có yêu cầu:
 ```c
 /* Rút ngắn thời gian Xanh nếu có người xin qua đường */
 if (current_phase == PHASE_GREEN && elapsed_sec >= 2 && atomic_get(&ped_request_flag) == 1) {
@@ -86,7 +86,7 @@ static void broadcast_traffic_state(uint8_t phase, uint8_t remaining, uint8_t se
 ```
 
 ### 🔹 Bước 4: Quan sát cơ chế hiển thị và Fail-Safe trên Kit B
-Kit B kiểm tra thời gian trôi qua từ lần cuối nhận `0x100`. Nếu $> 2000\\,\text{ms}$ $$\rightarrow$$ Bật Vàng nhấp nháy:
+Kit B kiểm tra thời gian trôi qua từ lần cuối nhận `0x100`. Nếu > 2000 ms → Bật Vàng nhấp nháy:
 ```c
 if (now - last_rx > 2000) {
     /* KÍCH HOẠT FAIL-SAFE: Vàng nhấp nháy 500ms ON / 500ms OFF */
@@ -156,11 +156,11 @@ sequenceDiagram
 
 | Mốc thời gian | Trạng thái Kit A (Master) | Trạng thái Kit B (Slave) | Đèn hiển thị trên Kit B |
 | :---: | :--- | :--- | :---: |
-| **$0\\,\text{s} $\rightarrow$ 7\\,\text{s}$** | Pha ĐỎ (đếm ngược $7 $\rightarrow$ 1$) | Nhận `0x100` [ĐỎ] | **Y0 BẬT, Y1 TẮT (ĐỎ)** |
-| **$7\\,\text{s} $\rightarrow$ 12\\,\text{s}$** | Pha XANH (đếm ngược $5 $\rightarrow$ 1$) | Nhận `0x100` [XANH] | **Y0 TẮT, Y1 BẬT (XANH)** |
-| **$10\\,\text{s}$** | Nhận yêu cầu `0x110` lúc Xanh $\ge 2\\,\text{s}$ $$\rightarrow$$ Chấp nhận! | Gửi `0x110`, nhận `0x111 [OK]` | Xanh rút ngắn, chuẩn bị sang Vàng |
-| **$12\\,\text{s} $\rightarrow$ 14\\,\text{s}$** | Pha VÀNG (đếm ngược $2 $\rightarrow$ 1$) | Nhận `0x100` [VÀNG] | **CẢ Y0 VÀ Y1 BẬT (VÀNG)** |
-| **Khi đứt cáp CAN** | Gửi không có ACK $$\rightarrow$$ Báo lỗi truyền | Quá 2 giây không có `0x100` | **Y0 + Y1 NHÁY VÀNG (FAIL-SAFE)** |
+| **0s → 7s** | Pha ĐỎ (đếm ngược 7 → 1) | Nhận `0x100` [ĐỎ] | **Y0 BẬT, Y1 TẮT (ĐỎ)** |
+| **7s → 12s** | Pha XANH (đếm ngược 5 → 1) | Nhận `0x100` [XANH] | **Y0 TẮT, Y1 BẬT (XANH)** |
+| **10s** | Nhận yêu cầu `0x110` lúc Xanh ≥ 2s → Chấp nhận! | Gửi `0x110`, nhận `0x111 [OK]` | Xanh rút ngắn, chuẩn bị sang Vàng |
+| **12s → 14s** | Pha VÀNG (đếm ngược 2 → 1) | Nhận `0x100` [VÀNG] | **CẢ Y0 VÀ Y1 BẬT (VÀNG)** |
+| **Khi đứt cáp CAN** | Gửi không có ACK → Báo lỗi truyền | Quá 2 giây không có `0x100` | **Y0 + Y1 NHÁY VÀNG (FAIL-SAFE)** |
 
 ---
 
@@ -168,7 +168,7 @@ sequenceDiagram
 
 | Cơ chế kỹ thuật | Nếu KHÔNG CÓ cơ chế này | Hậu quả thực tế trên hệ thống |
 | :--- | :--- | :--- |
-| **Chế độ Bảo an Fail-Safe** | Kit B không có bộ định thời giám sát mất kết nối. | Khi Kit A bị đứt cáp hoặc mất nguồn, đèn trên Kit B giữ nguyên trạng thái cuối cùng (ví dụ đèn Xanh mãi mãi) $$\rightarrow$$ Gây tai nạn thảm khốc tại ngã tư. |
+| **Chế độ Bảo an Fail-Safe** | Kit B không có bộ định thời giám sát mất kết nối. | Khi Kit A bị đứt cáp hoặc mất nguồn, đèn trên Kit B giữ nguyên trạng thái cuối cùng (ví dụ đèn Xanh mãi mãi) → Gây tai nạn thảm khốc tại ngã tư. |
 | **Broadcast định kỳ 500 ms** | Kit A chỉ gửi frame khi đổi màu đèn (cách nhau 2s đến 7s). | Kit B không thể phân biệt được Kit A đang đếm giây bình thường hay đã bị cháy/mất nguồn trong suốt 7 giây của đèn Đỏ. |
 | **Phản hồi xác nhận `0x111`** | Kit A không trả lời yêu cầu xin qua đường. | Người đi bộ bấm nút nhưng không biết hệ thống đã ghi nhận hay chưa, gây sốt ruột và có thể cố tình băng qua đường nguy hiểm. |
 
@@ -186,8 +186,8 @@ sequenceDiagram
 * **Giải pháp:** Để lệnh điều khiển đèn luôn được ưu tiên tuyệt đối trên bus, ta phải chọn ID cho frame đèn nhỏ hơn `0x050`, ví dụ như chọn ID trong dải `0x010` – `0x04F`.
 
 ### ❓ Câu (c): Rút dây CANH khi đèn đang Xanh: Mô tả theo thời gian điều gì xảy ra ở Kit A và Kit B (dựa trên log).
-1. **Tại thời điểm $t = 0\\,\text{s}$:** Rút dây `CANH`. Tín hiệu vi sai bị ngắt hoàn toàn.
-2. **Tại $t = 500\\,\text{ms}$:** Kit A gửi frame `0x100` nhưng không thấy bit ACK từ Kit B $$\rightarrow$$ Kit A báo lỗi truyền (`can_send that bai`), bộ đếm lỗi TEC tăng dần và Kit A chuyển dần sang `ERROR-PASSIVE`.
+1. **Tại thời điểm t = 0s:** Rút dây `CANH`. Tín hiệu vi sai bị ngắt hoàn toàn.
+2. **Tại t = 500 ms:** Kit A gửi frame `0x100` nhưng không thấy bit ACK từ Kit B → Kit A báo lỗi truyền (`can_send that bai`), bộ đếm lỗi TEC tăng dần và Kit A chuyển dần sang `ERROR-PASSIVE`.
 3. **Tại Kit B:** Kit B không nhận được frame `0x100` nào nữa. Biến mốc thời gian `last_rx_state_uptime` không được cập nhật.
-4. **Tại $t = 2,0\\,\text{s}$:** Bộ đếm thời gian giám sát trên Kit B vượt quá ngưỡng 2000 ms $$\rightarrow$$ Kit B kích hoạt chế độ **FAIL-SAFE**: Ngắt trạng thái đèn Xanh, chuyển sang chớp nháy đồng thời cả Y0 và Y1 chu kỳ 500ms ON / 500ms OFF (đèn Vàng cảnh báo ngã tư) và in dòng log `[FAIL-SAFE] Mat ket noi voi Kit A qua 2 giay! Nhay Vang an toan`.
-5. **Khi cắm lại dây:** Frame `0x100` tiếp theo được Kit B nhận thành công $$\rightarrow$$ Kit B in `[RECOVERED]`, lập tức thoát Fail-Safe và phục hồi ngay về đúng màu đèn cùng số giây thực tế mà Kit A đang điều khiển.
+4. **Tại t = 2.0s:** Bộ đếm thời gian giám sát trên Kit B vượt quá ngưỡng 2000 ms → Kit B kích hoạt chế độ **FAIL-SAFE**: Ngắt trạng thái đèn Xanh, chuyển sang chớp nháy đồng thời cả Y0 và Y1 chu kỳ 500ms ON / 500ms OFF (đèn Vàng cảnh báo ngã tư) và in dòng log `[FAIL-SAFE] Mat ket noi voi Kit A qua 2 giay! Nhay Vang an toan`.
+5. **Khi cắm lại dây:** Frame `0x100` tiếp theo được Kit B nhận thành công → Kit B in `[RECOVERED]`, lập tức thoát Fail-Safe và phục hồi ngay về đúng màu đèn cùng số giây thực tế mà Kit A đang điều khiển.
