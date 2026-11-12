@@ -309,6 +309,7 @@ static void thread_traffic_rx_dispatcher(void *p1, void *p2, void *p3)
 	while (1) {
 		k_msgq_get(&traffic_rx_msgq, &f, K_FOREVER);
 		uint32_t now = k_uptime_get_32();
+		(void)now; /* Tranh warning unused variable khi build role Kit A */
 
 		/* 1. Xử lý Frame 0x100: Trạng thái đèn từ Kit A gửi tới Kit B */
 		if (f.id == CAN_ID_TRAFFIC_STATE) {
