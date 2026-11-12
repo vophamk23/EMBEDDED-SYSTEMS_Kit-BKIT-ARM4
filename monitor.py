@@ -3,7 +3,15 @@ from ctypes import wintypes
 import sys
 import time
 
-PORT = r'\\.\COM5'
+# Mặc định là COM5, hoặc nhận cổng từ tham số dòng lệnh: python monitor.py COM5
+port_name = sys.argv[1] if len(sys.argv) > 1 else 'COM5'
+if not port_name.startswith(r'\\.'):
+    if not port_name.upper().startswith('COM'):
+        port_name = 'COM' + port_name
+    PORT = f"\\\\.\\{port_name.upper()}"
+else:
+    PORT = port_name
+
 BAUD = 115200
 
 kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
