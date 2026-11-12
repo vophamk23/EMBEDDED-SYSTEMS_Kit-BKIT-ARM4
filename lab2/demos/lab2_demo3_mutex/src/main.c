@@ -40,7 +40,7 @@
  * - Đặt bằng 1: Bật Mutex bảo vệ -> Kết quả đúng 2000 -> LED3 sáng.
  * - Đặt bằng 0: Tắt Mutex -> Gặp lỗi Race Condition -> counter < 2000 -> Y0 sáng.
  */
-#define USE_MUTEX 1
+#define USE_MUTEX 0
 #define LOOPS     1000
 
 /* Cấu hình các chân LED báo kết quả */

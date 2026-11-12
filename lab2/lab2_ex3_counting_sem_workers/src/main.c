@@ -3,7 +3,7 @@
  * BKIT ARM4 - HỆ THỐNG NHÚNG - BÀI THỰC HÀNH 2
  * BÀI TẬP 3: Chia sẻ 2 kênh Output cho 4 Worker bằng Counting Semaphore & Mutex
  * ==============================================================================
- * 
+ *
  * 1. MỤC TIÊU BÀI TẬP:
  *    - Sử dụng Counting Semaphore để quản lý số lượng tài nguyên có giới hạn (Resource Pool).
  *      Ở đây: có 2 kênh output (Y0, Y1) phục vụ cho 4 worker -> tối đa 2 worker chạy cùng lúc.
@@ -54,9 +54,9 @@ static bool ch_busy[2] = {false, false};
 
 /* Cấu trúc cấu hình cho từng worker */
 struct worker_cfg {
-	int id;         /* ID: 1, 2, 3, 4 */
-	int work_ms;    /* Thời gian giữ kênh (ms) */
-	int rest_ms;    /* Thời gian nghỉ ngơi (ms) */
+	int id;      /* ID: 1, 2, 3, 4 */
+	int work_ms; /* Thời gian giữ kênh (ms) */
+	int rest_ms; /* Thời gian nghỉ ngơi (ms) */
 };
 
 static const struct worker_cfg cfg1 = {1, 1000, 500};
@@ -82,20 +82,29 @@ void thread_worker(void *p1, void *p2, void *p3)
 		/* ==========================================================
 		 * BƯỚC 2: CHỌN KÊNH RẢNH (Critical Section được Mutex bảo vệ)
 		 * ========================================================== */
+		/* Khóa Mutex: Đảm bảo chỉ 1 Worker được tìm và cấp phát kênh tại một thời điểm */
 		k_mutex_lock(&ch_mutex, K_FOREVER);
+
+		/* Biến cục bộ nằm trên Stack riêng của Thread (1024 bytes) */
 		int ch = -1;
+
+		/* Ưu tiên kiểm tra Kênh 0 (đèn Y0) trước */
 		if (!ch_busy[0]) {
-			ch = 0;
-			ch_busy[0] = true;
-		} else if (!ch_busy[1]) {
-			ch = 1;
-			ch_busy[1] = true;
+			ch = 0;             /* Chọn Kênh 0 */
+			ch_busy[0] = true;  /* Đánh dấu Kênh 0 đang bận */
+		} 
+		/* Nếu Kênh 0 đã bận, chọn Kênh 1 (đèn Y1) */
+		else if (!ch_busy[1]) {
+			ch = 1;             /* Chọn Kênh 1 */
+			ch_busy[1] = true;  /* Đánh dấu Kênh 1 đang bận */
 		}
 
-		/* LED3 sáng khi không còn kênh trống (pool_sem == 0), tắt khi có kênh trống */
+		/* Kiểm tra: Nếu cả 2 kênh đều bận (hết vé pool_sem) -> Bật LED3 cảnh báo */
 		if (k_sem_count_get(&pool_sem) == 0) {
 			gpio_pin_set_dt(&led3, 1);
 		}
+
+		/* Mở khóa Mutex: Cho phép Worker kế tiếp vào cấp phát kênh */
 		k_mutex_unlock(&ch_mutex);
 
 		/* ==========================================================
@@ -113,13 +122,13 @@ void thread_worker(void *p1, void *p2, void *p3)
 		 * ========================================================== */
 		printf("[%6u ms] W%d tra kenh %s\n", k_uptime_get_32(), cfg->id, ch_names[ch]);
 
+		/* Khóa Mutex: Cập nhật trạng thái trả kênh an toàn */
 		k_mutex_lock(&ch_mutex, K_FOREVER);
-		ch_busy[ch] = false;
-		/* Vì vừa trả kênh nên chắc chắn có kênh trống -> Tắt LED3 */
-		gpio_pin_set_dt(&led3, 0);
+		ch_busy[ch] = false;        /* Đánh dấu kênh này đã rảnh trở lại */
+		gpio_pin_set_dt(&led3, 0);  /* Chắc chắn có ít nhất 1 kênh rảnh -> Tắt LED3 */
 		k_mutex_unlock(&ch_mutex);
 
-		/* Trả lại 1 vé cho pool_sem để đánh thức worker khác đang đợi */
+		/* Trả lại 1 vé cho Semaphore để đánh thức Worker đang chờ */
 		k_sem_give(&pool_sem);
 
 		/* ==========================================================
