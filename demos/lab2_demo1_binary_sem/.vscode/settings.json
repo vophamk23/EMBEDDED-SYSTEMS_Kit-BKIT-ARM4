@@ -15,5 +15,6 @@
   "files.associations": {
     "*.overlay": "dts",
     "prj.conf": "kconfig"
-  }
+  },
+  "terminal.integrated.stickyScroll.enabled": false
 }

@@ -3,7 +3,7 @@
  * BKIT ARM4 - HỆ THỐNG NHÚNG - BÀI THỰC HÀNH 2
  * BÀI TẬP 4: Thu thập dữ liệu từ ISR qua Message Queue
  * ==============================================================================
- * 
+ *
  * 1. MỤC TIÊU BÀI TẬP:
  *    - Sử dụng Message Queue để truyền dữ liệu an toàn từ ngắt (ISR) sang Thread.
  *    - Nắm vững việc dùng K_NO_WAIT trong ISR: ISR không được phép chờ (block),
@@ -19,8 +19,8 @@
  */
 
 #include <stdio.h>
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 
 /* Khai báo phần cứng LED từ Devicetree */
@@ -28,12 +28,12 @@
 #define LED1_NODE DT_ALIAS(led1) /* Y0   - PE5: Nháy khi Consumer đang xử lý mẫu */
 
 static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
-static const struct gpio_dt_spec y0   = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+static const struct gpio_dt_spec y0 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 
 /* Cấu trúc dữ liệu của mỗi mẫu (Sample) */
 struct sample {
-	uint32_t seq;   /* Số thứ tự gói tin tăng dần */
-	uint32_t t_ms;  /* Mốc thời gian tạo mẫu (ms) */
+	uint32_t seq;  /* Số thứ tự gói tin tăng dần */
+	uint32_t t_ms; /* Mốc thời gian tạo mẫu (ms) */
 };
 
 /*
@@ -57,7 +57,7 @@ static atomic_t n_recv = ATOMIC_INIT(0); /* Số mẫu thread_consumer đã lấ
  * - Để chạy Phần a: Đặt là 500 ms (chậm hơn tốc độ timer 200 ms -> BỊ MẤT MẪU)
  * - Để chạy Phần b: Đổi sang 150 ms (nhanh hơn tốc độ timer 200 ms -> KHÔNG MẤT MẪU)
  */
-#define CONSUME_TIME_MS 500
+#define CONSUME_TIME_MS 150
 
 /*
  * HÀM NGẮT (ISR) CỦA TIMER: Chạy mỗi 200 ms
@@ -78,8 +78,12 @@ static void sample_timer_isr(struct k_timer *timer)
 	 */
 	int ret = k_msgq_put(&sample_q, &s, K_NO_WAIT);
 	if (ret == 0) {
+		/* TRƯỜNG HỢP THÀNH CÔNG (ret == 0):
+		 * Hàng đợi còn chỗ trống, gói tin đã được copy vào an toàn */
 		atomic_inc(&n_sent);
 	} else {
+		/* TRƯỜNG HỢP THẤT BẠI:
+		 * Hàng đợi đã chật kín (8/8), gói tin bị vứt bỏ ra ngoài đất */
 		atomic_inc(&n_drop);
 	}
 }
@@ -122,8 +126,8 @@ void fn_thread_monitor(void *p1, void *p2, void *p3)
 		long drop = atomic_get(&n_drop);
 		uint32_t in_q = k_msgq_num_used_get(&sample_q);
 
-		printf("[%6u ms] GUI: %ld | NHAN: %ld | MAT: %ld | TRONG HANG DOI: %u/8\n",
-		       k_uptime_get_32(), sent, recv, drop, in_q);
+		printf("[%6u ms] GUI: %ld | NHAN: %ld | MAT: %ld | TRONG HANG DOI: %u/8\n", k_uptime_get_32(), sent,
+		       recv, drop, in_q);
 
 		/* Bật LED3 cảnh báo nếu đã có ít nhất một mẫu bị mất */
 		if (drop > 0) {
@@ -134,7 +138,7 @@ void fn_thread_monitor(void *p1, void *p2, void *p3)
 
 /* Khai báo 2 thread theo đúng tên trong đề */
 K_THREAD_DEFINE(thread_consumer, 1024, fn_thread_consumer, NULL, NULL, NULL, 5, 0, 0);
-K_THREAD_DEFINE(thread_monitor,  1024, fn_thread_monitor,  NULL, NULL, NULL, 6, 0, 0);
+K_THREAD_DEFINE(thread_monitor, 1024, fn_thread_monitor, NULL, NULL, NULL, 6, 0, 0);
 
 int main(void)
 {
