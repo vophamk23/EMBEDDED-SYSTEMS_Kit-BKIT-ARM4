@@ -20,3 +20,12 @@ __pycache__/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
